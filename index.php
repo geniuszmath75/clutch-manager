@@ -1,10 +1,58 @@
 <?php
 
-use core\Routing;
+declare(strict_types=1);
 
-require_once("core/Routing.php");
+/**
+ * index.php — application entry point (front controller).
+ *
+ * Bootstrap order:
+ * 1. Environment constants (BASE_PATH)
+ * 2. Loading .env variables
+ * 3. Class autoloader
+ * 4. Session start
+ * 5. Route registration
+ * 6. Dispatch requests
+ */
 
-$path = trim($_SERVER['REQUEST_URI'], '/');
-$path = parse_url($path, PHP_URL_PATH);
+// 1. CONSTANTS
 
-Routing::run($path);
+const BASE_PATH = __DIR__;
+
+// 2. ENV VARIABLES
+// Set by docker-compose
+// Accessible via $_ENV
+
+// 3. Autoloader
+
+require_once BASE_PATH . '/autoload.php';
+
+// 4. Session
+
+use core\Response;
+use core\Router;
+use core\Session;
+
+Session::start();
+
+// 5. Error handling
+
+set_exception_handler(function (Throwable $e): void {
+    error_log(sprintf(
+        '[ERROR]: Unhandled exception: %s in %s:%d',
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine()
+    ));
+
+    Response::serverError("Ooops! Server failed the clutch. Please try refreshing the page in a few minutes.");
+});
+
+// 6. Router
+
+$router = new Router();
+
+// --- Auth ---
+
+// 7. Dispatch
+
+$router->dispatch();
