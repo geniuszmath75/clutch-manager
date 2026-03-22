@@ -1,11 +1,11 @@
 <?php
 
+namespace core;
 class Routing
 {
     public static function run($path)
     {
-        switch ($path)
-        {
+        switch ($path) {
             case "dashboard":
                 include "public/views/dashboard.html";
                 break;
