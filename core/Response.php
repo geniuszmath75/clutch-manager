@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core;
+namespace Core;
 
 final class Response
 {
@@ -12,6 +12,19 @@ final class Response
         header('Content-Type: application/json');
 
         echo json_encode($data, JSON_UNESCAPED_UNICODE, JSON_THROW_ON_ERROR);
+
+        if ($terminate) {
+            exit;
+        }
+    }
+
+    /**
+     * HTTP redirection (302 default)
+     */
+    public static function redirect(string $url, int $status = 302, bool $terminate = true): void
+    {
+        http_response_code($status);
+        header("Location: {$url}");
 
         if ($terminate) {
             exit;
@@ -64,5 +77,22 @@ final class Response
     public static function serverError(string $message = 'Internal Server Error', bool $terminate = true): void
     {
         self::error(500, $message, $terminate);
+    }
+
+    public static function view(string $viewPath, array $data = [], bool $terminate = true): void
+    {
+        $fullPath = BASE_PATH . '/public/views/' . ltrim($viewPath, '/');
+
+        if (!file_exists($fullPath)) {
+            self::notFound("Page not found: {$viewPath}");
+            return;
+        }
+
+        extract($data, EXTR_SKIP);
+        require $fullPath;
+
+        if ($terminate) {
+            exit;
+        }
     }
 }

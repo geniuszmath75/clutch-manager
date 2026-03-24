@@ -15,9 +15,11 @@ declare(strict_types=1);
  * Src\Model\User → /src/Model/User.php
  */
 spl_autoload_register(function (string $class): void {
+    error_log('Trying to load: ' . $class);
+
     $namespaceMap = [
-        'core\\' => BASE_PATH . '/core/',
-        'src\\'  => BASE_PATH . '/src/',
+        'Core\\' => BASE_PATH . '/core/',
+        'Src\\'  => BASE_PATH . '/src/',
     ];
 
     foreach ($namespaceMap as $prefix => $baseDir) {

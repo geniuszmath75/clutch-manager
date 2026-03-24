@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace core;
+namespace Core;
 
-use http\Exception\RuntimeException;
+use RuntimeException;
 use PDO;
 use PDOException;
 
@@ -17,19 +17,15 @@ use PDOException;
 final class Database
 {
     private static ?Database $instance = null;
-    private \PDO $pdo {
-        get {
-            return $this->pdo;
-        }
-    }
+    public PDO $pdo;
 
     public function __construct()
     {
-        $host = $this->requireEnv('DB_HOST');
-        $port = $this->requireEnv('DB_PORT');
-        $dbname = $this->requireEnv('DB_NAME');
-        $user = $this->requireEnv('DB_USER');
-        $pass = $this->requireEnv('DB_PASSWORD');
+        $host = $this->requireEnv('POSTGRES_HOST');
+        $port = $this->requireEnv('POSTGRES_PORT');
+        $dbname = $this->requireEnv('POSTGRES_DB');
+        $user = $this->requireEnv('POSTGRES_USER');
+        $pass = $this->requireEnv('POSTGRES_PASSWORD');
 
         $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
 
@@ -40,7 +36,7 @@ final class Database
                 PDO::ATTR_EMULATE_PREPARES => false
             ]);
         } catch (PDOException $e) {
-            throw new RuntimeException("[ERROR]: Database connection failed.", 0, $e);
+            throw new RuntimeException("[ERROR]: Database connection failed." . $e->getMessage(), 0, $e);
         }
     }
 
@@ -51,6 +47,11 @@ final class Database
         }
 
         return self::$instance;
+    }
+
+    public function getPDO(): PDO
+    {
+        return $this->pdo;
     }
 
     /**

@@ -28,9 +28,9 @@ require_once BASE_PATH . '/autoload.php';
 
 // 4. Session
 
-use core\Response;
-use core\Router;
-use core\Session;
+use Core\Response;
+use Core\Router;
+use Core\Session;
 
 Session::start();
 

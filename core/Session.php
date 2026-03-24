@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace core;
+namespace Core;
+
+use RuntimeException;
 
 final class Session
 {

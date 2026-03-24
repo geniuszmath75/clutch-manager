@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace core;
-use http\Exception\InvalidArgumentException;
+namespace Core;
+
+use InvalidArgumentException;
 
 /**
  * Router - Matches an HTTP request to a registered handler.
