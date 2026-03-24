@@ -52,6 +52,15 @@ set_exception_handler(function (Throwable $e): void {
 $router = new Router();
 
 // --- Auth ---
+$router->get('/auth/login', [Src\Controller\AuthController::class, 'showLoginView']);
+$router->post('/auth/login', [Src\Controller\AuthController::class, 'loginUser']);
+$router->get('/auth/register', [Src\Controller\AuthController::class, 'showRegisterView']);
+$router->post('/auth/register', [Src\Controller\AuthController::class, 'registerUser']);
+$router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser']);
+
+// --- Dashboard ---
+$router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
+$router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
 
 // 7. Dispatch
 

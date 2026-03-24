@@ -6,6 +6,21 @@
     <title>Login</title>
 </head>
 <body>
-    <h1>Login</h1>
+    <h1>Clutch Manager</h1>
+    <h2>Login</h2>
+
+    <form action="/auth/login" method="post">
+        <label>
+            Email
+            <input type="email" name="email" required autofocus>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password">
+        </label>
+        <button type="submit">Log In</button>
+    </form>
+
+    <p>Don't have an account? <a href="/auth/register">Register</a></p>
 </body>
 </html>
