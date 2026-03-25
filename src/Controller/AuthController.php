@@ -5,18 +5,27 @@ namespace Src\Controller;
 use Core\Auth;
 use Core\Database;
 use Core\Response;
+use Src\Repository\SystemRoleRepository;
+use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
 use Src\Service\AuthService;
 
 final class AuthController
 {
     private AuthService $authService;
+    private TeamRoleRepository $teamRoleRepository;
 
     public function __construct()
     {
         $pdo = Database::getInstance()->getPDO();
+        $this->teamRoleRepository = new TeamRoleRepository($pdo);
         $userRepository = new UserRepository($pdo);
-        $this->authService = new AuthService($userRepository);
+        $systemRoleRepository = new SystemRoleRepository($pdo);
+        $this->authService = new AuthService(
+            $userRepository,
+            $systemRoleRepository,
+            $this->teamRoleRepository
+        );
     }
 
     /**
@@ -57,7 +66,9 @@ final class AuthController
             Response::redirect('/dashboard');
         }
 
-        Response::view('register.html');
+        $teamRoles = $this->teamRoleRepository->findAll();
+
+        Response::view('register.php', ['teamRoles' => $teamRoles]);
     }
 
     /**
@@ -68,11 +79,19 @@ final class AuthController
         $nickname = $_POST['nickname'] ?? '';
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
+        $systemRoleIdent = $_POST['system_role_ident'] ?? '';
+        $teamRoleIdent = $_POST['team_role_ident'] ?? null;
 
-        $result = $this->authService->register($nickname, $email, $password);
+        $result = $this->authService->register(
+            $nickname,
+            $email,
+            $password,
+            $systemRoleIdent,
+            $teamRoleIdent
+        );
 
         if (!$result['ok']) {
-            Response::redirect('/auth/login?error='.urlencode($result['error']));
+            Response::redirect('/auth/register?error='.urlencode($result['error']));
         }
 
         Response::redirect('/auth/login?registered=1');

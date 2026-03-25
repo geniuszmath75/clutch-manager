@@ -64,19 +64,19 @@ final class UserRepository
      * team_role_id — null upon registration (later assigned by ADMIN/CAPTAIN)
      * team_id — null upon registration
      */
-    public function create(string $nickname, string $email, string $password): int
+    public function create(string $nickname, string $email, string $password, int $systemRoleId, ?int $teamRoleId): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO users (nickname, email, password, system_role_id)
-                   VALUES (:nickname, :email, :password, (
-                           SELECT id FROM system_roles WHERE ident=\'PLAYER\'
-                            ))
+            'INSERT INTO users (nickname, email, password, system_role_id, team_role_id)
+                   VALUES (:nickname, :email, :password, :system_role_id, :team_role_id)
                    RETURNING id'
         );
         $stmt->execute([
             'nickname' => $nickname,
             'email' => $email,
             'password' => $password,
+            'system_role_id' => $systemRoleId,
+            'team_role_id' => $teamRoleId,
         ]);
         return (int) $stmt->fetchColumn();
     }
