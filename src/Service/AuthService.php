@@ -101,10 +101,14 @@ final class AuthService
             return ['ok' => false, 'error' => 'Invalid system role.'];
         }
 
-        $teamRoleId = $this->teamRoleRepository->findIdByIdent($teamRoleIdent);
+        $teamRoleId = null;
 
-        if (empty($teamRoleId)) {
-            return ['ok' => false, 'error' => 'Invalid team role.'];
+        if (!empty($teamRoleIdent)) {
+            $teamRoleId = $this->teamRoleRepository->findIdByIdent($teamRoleIdent);
+
+            if (empty($teamRoleId)) {
+                return ['ok' => false, 'error' => 'Invalid team role.'];
+            }
         }
 
         $password = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
