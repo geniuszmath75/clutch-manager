@@ -3,24 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width" initial-scale=1>
+    <link rel="stylesheet" href="/public/assets/css/auth.css" />
     <title>Login</title>
 </head>
 <body>
-    <h1>Clutch Manager</h1>
-    <h2>Login</h2>
+    <div class="auth-page">
+        <div class="auth-page__background"></div>
 
-    <form action="/auth/login" method="post">
-        <label>
-            Email
-            <input type="email" name="email" required autofocus>
-        </label>
-        <label>
-            Password
-            <input type="password" name="password">
-        </label>
-        <button type="submit">Log In</button>
-    </form>
+        <div class="auth-page__blur auth-page__blur--top-left"></div>
+        <div class="auth-page__blur auth-page__blur--bottom-right"></div>
 
-    <p>Don't have an account? <a href="/auth/register">Register</a></p>
+        <div class="auth-layout">
+            <div class="auth-header">
+                <div class="auth-header__logo">
+                    <div class="logo">
+                        <div class="logo__icon-wrapper">
+                            <img src="/public/assets/img/logo.svg" alt="logo" class="logo__icon" />
+                        </div>
+
+                        <div class="logo__text">
+                            <span class="logo__primary">Clutch</span>
+                            <span class="logo__accent">Manager</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h1 class="auth-header__title">
+                    Login
+                </h1>
+            </div>
+
+
+            <div class="auth-card">
+                <form action="/auth/login" method="post" class="auth-form">
+
+                    <!-- EMAIL -->
+                    <div class="form-field">
+                        <label for="email" class="form-field__label">
+                            Email Address
+                        </label>
+
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <img src="/public/assets/img/email.svg" alt="Email icon" />
+                            </div>
+
+                            <input id="email" type="email" name="email" placeholder="name@example.com" required autofocus>
+                        </div>
+                    </div>
+
+                    <!-- PASSWORD -->
+                    <div class="form-field">
+                        <label for="password" class="form-field__label">
+                            Password
+                        </label>
+
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <img src="/public/assets/img/locked.svg" alt="Locked icon" />
+                            </div>
+
+                            <input id="password" type="password" name="password" placeholder="********" required autofocus>
+
+                            <button type="button" class="input-action">
+                                <img src="/public/assets/img/eye-open.svg" alt="Open eye icon" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-accent">
+                        <span class="btn-accent__label">Login</span>
+                        <img src="/public/assets/img/right-arrow.svg" alt="Right arrow icon" class="btn-accent__icon" />
+                    </button>
+                </form>
+
+                <div class="auth-divider"></div>
+
+                <div class="auth-footer">
+                    <span class="auth-footer__text">
+                        Don't have an account?
+                    </span>
+
+                    <a href="/auth/register" class="auth-footer__link">
+                        Register
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -1,0 +1,23 @@
+:root {
+    --primary: #0F172A;
+    --secondary: #080C09;
+    --tertiary: #1E293B;
+    --white: #F1F5F9;
+    --black: #020617;
+    --accent: #00FF40;
+    --accent-01: rgba(0, 255, 64, 0.1);
+    --accent-02: rgba(0, 255, 64, 0.2);
+    --accent-08: rgba(0, 255, 64, 0.8);
+    --bg-gradient: linear-gradient(180deg, var(--primary), var(--secondary));
+    --font-size: 16px;
+    --quaternary: #64748B;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-size: var(--font-size);
+    font-family: 'Inter', sans-serif;
+    color: var(--white);
+}
