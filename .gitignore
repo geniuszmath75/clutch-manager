@@ -1,3 +1,6 @@
 .idea
 config.php
 .env
+
+# generated JS files
+public/assets/js
