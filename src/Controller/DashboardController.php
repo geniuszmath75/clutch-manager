@@ -11,7 +11,7 @@ final class DashboardController
      * GET /
      * GET /dashboard
      */
-    public function showDashboardView(array $params): void
+    public function showDashboardView(): void
     {
         Auth::requireLogin();
 

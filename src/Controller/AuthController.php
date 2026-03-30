@@ -31,7 +31,7 @@ final class AuthController
     /**
      * GET /auth/login
      */
-    public function showLoginView(array $params): void
+    public function showLoginView(): void
     {
         if (Auth::isLoggedIn()) {
             Response::redirect('/dashboard');
@@ -43,7 +43,7 @@ final class AuthController
     /**
      * POST /auth/login
      */
-    public function loginUser(array $params): void
+    public function loginUser(): void
     {
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
@@ -60,7 +60,7 @@ final class AuthController
     /**
      * GET /auth/register
      */
-    public function showRegisterView(array $params): void
+    public function showRegisterView(): void
     {
         if (Auth::isLoggedIn()) {
             Response::redirect('/dashboard');
@@ -74,7 +74,7 @@ final class AuthController
     /**
      * POST /auth/register
      */
-    public function registerUser(array $params): void
+    public function registerUser(): void
     {
         $nickname = $_POST['nickname'] ?? '';
         $email = $_POST['email'] ?? '';

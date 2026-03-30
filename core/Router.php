@@ -172,12 +172,12 @@ final class Router
                 throw new InvalidArgumentException("[ERROR]: Method {$method} not found in {$class}.");
             }
 
-            $controller->{$method}($params);
+            $controller->{$method}(...array_values($params));
             return;
         }
 
         if (is_callable($handler)) {
-            $handler($params);
+            $handler(...array_values($params));
             return;
         }
 
