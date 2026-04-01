@@ -62,6 +62,11 @@ $router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser
 $router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
 
+// --- Players ---
+$router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);
+$router->put('/players/{id}', [Src\Controller\PlayerController::class, 'updatePlayer']);
+$router->patch('/players/{id}', [Src\Controller\PlayerController::class, 'deactivatePlayer']);
+
 // 7. Dispatch
 
 $router->dispatch();

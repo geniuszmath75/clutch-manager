@@ -16,6 +16,46 @@ final class Auth
     }
 
     /**
+     * Returns the logged-in user's session data or null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function user(): ?array
+    {
+        if (!self::isLoggedIn()) {
+            return null;
+        }
+
+        return Session::get('user');
+    }
+
+    /**
+     * Returns the system role of the logged-in user, or null.
+     */
+    public static function systemRole(): ?string
+    {
+        $user = self::user();
+        return $user['system_role'] ?? null;
+    }
+
+    /**
+     * Checks if the logged-in user has the specified role.
+     *
+     * @param string|string[] $roles A single role or an array of roles
+     */
+    public static function hasRole(string|array $roles): bool
+    {
+        $userRole = self::systemRole();
+
+        if (empty($userRole)) {
+            return false;
+        }
+
+        $allowed = is_array($roles) ? $roles : [$roles];
+        return in_array($userRole, $allowed, strict: true);
+    }
+
+    /**
      * Requires login - redirects to /login or returns 401 for AJAX.
      */
     public static function requireLogin(): void
@@ -28,7 +68,25 @@ final class Auth
             Response::unauthorized();
         }
 
-        Response::redirect('/login');
+        Response::redirect('/auth/login');
+    }
+
+    /**
+     * Requires a specific role - returns 403 if permissions are denied.
+     *
+     * @param string|string[] $roles
+     */
+    public static function requireRole(string|array $roles): void
+    {
+        self::requireLogin();
+
+        if (!self::hasRole($roles)) {
+            if (self::isAjaxRequest()) {
+                Response::forbidden();
+            }
+
+            Response::redirect('/dashboard');
+        }
     }
 
     /**
