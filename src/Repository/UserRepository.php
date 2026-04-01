@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Src\Repository;
 
+use Core\Database;
+use PDO;
 use Src\Model\User;
 
 final class UserRepository
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-    ) {}
+    private PDO $pdo;
+
+    public function __construct()
+    {
+        $this->pdo = Database::getInstance()->getPDO();
+    }
 
     /**
      * Returns the user by email, or null if it doesn't exist.

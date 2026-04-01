@@ -17,10 +17,9 @@ final class AuthController
 
     public function __construct()
     {
-        $pdo = Database::getInstance()->getPDO();
-        $this->teamRoleRepository = new TeamRoleRepository($pdo);
-        $userRepository = new UserRepository($pdo);
-        $systemRoleRepository = new SystemRoleRepository($pdo);
+        $this->teamRoleRepository = new TeamRoleRepository();
+        $userRepository = new UserRepository();
+        $systemRoleRepository = new SystemRoleRepository();
         $this->authService = new AuthService(
             $userRepository,
             $systemRoleRepository,

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Src\Repository;
 
+use Core\Database;
 use PDO;
 
 abstract class AbstractDictionaryRepository implements DictionaryRepositoryInterface
 {
+    protected PDO $pdo;
 
-    public function __construct(
-        protected readonly PDO $pdo
-    ) {}
+    public function __construct()
+    {
+        $this->pdo = Database::getInstance()->getPDO();
+    }
 
     /**
      * Name of the dictionary table this repository targets.
