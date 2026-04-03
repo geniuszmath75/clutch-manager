@@ -42,7 +42,7 @@ final class PlayerController
                 ? $this->playerService->getByTeamRole($filterRole)
                 : $this->playerService->getAll();
 
-            if ($this->isApiRequest()) {
+            if (Auth::isAjaxRequest()) {
                 Response::json([
                     'success' => true,
                     'data' => $players
@@ -53,7 +53,7 @@ final class PlayerController
             // First page load
             Response::view("players.html");
         } catch (InvalidArgumentException $e) {
-            Response::serverError($e->getMessage());
+            $this->handleError($e->getCode(), $e->getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ final class PlayerController
         $data = $this->parseJsonBody();
 
         if ($data === null) {
-            Response::error(400, 'Invalid data format (JSON expected)');
+            $this->handleError(400, 'Invalid data format (JSON expected)');
             return;
         }
 
@@ -85,10 +85,8 @@ final class PlayerController
                 'message' => 'Player updated successfully.',
                 'data' => $updated,
             ]);
-        } catch (InvalidArgumentException $e) {
-            Response::badRequest($e->getMessage());
-        } catch (RuntimeException $e) {
-            Response::serverError($e->getMessage());
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
         }
     }
 
@@ -107,10 +105,8 @@ final class PlayerController
                 'success' => true,
                 'message' => 'Player deactivated successfully.'
             ]);
-        } catch (InvalidArgumentException $e) {
-            Response::badRequest($e->getMessage());
-        } catch (RuntimeException $e) {
-            Response::serverError($e->getMessage());
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
         }
     }
 
@@ -138,12 +134,16 @@ final class PlayerController
         return $_POST ?: [];
     }
 
-    private function isApiRequest(): bool
+    /**
+     * Returns error as JSON (for AJAX) or redirect (for HTML).
+     */
+    private function handleError(int $code, string $message): void
     {
-        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
-        $xhr = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+        if (Auth::isAjaxRequest()) {
+            Response::error($code, $message);
+            return;
+        }
 
-        return str_contains($accept, 'application/json')
-            || strtolower($xhr) === 'xmlhttprequest';
+        Response::redirect('/players?error=' . urlencode($message));
     }
 }

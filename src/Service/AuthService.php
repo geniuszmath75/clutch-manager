@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Src\Service;
 
 use Core\Session;
+use InvalidArgumentException;
+use RuntimeException;
 use Src\Enum\SystemRole;
 use Src\Enum\TeamRole;
 use Src\Repository\SystemRoleRepository;
@@ -22,25 +24,26 @@ final class AuthService
     /**
      * Logs the user in.
      *
-     * @return array{ok: bool, error?: string}
+     * @throws InvalidArgumentException on validation failure
+     * @throws RuntimeException on invalid credentials or inactive account
      */
-    public function login(string $email, string $password): array
+    public function login(string $email, string $password): void
     {
         $email = trim($email);
         $password = trim($password);
 
         if (empty($email) || empty($password)) {
-            return ['ok' => false, 'error' => 'Email and password are required.'];
+            throw new InvalidArgumentException('Email and password are required.');
         }
 
         $user = $this->userRepository->findByEmail($email);
 
         if (empty($user) || !password_verify($password, $user->password)) {
-            return ['ok' => false, 'error' => 'Invalid email or password.'];
+            throw new RuntimeException('Invalid email or password.', 401);
         }
 
         if (!$user->isActive) {
-            return ['ok' => false, 'error' => 'Account is inactive.'];
+            throw new RuntimeException('Account is inactive.', 403);
         }
 
         Session::regenerate();
@@ -52,8 +55,6 @@ final class AuthService
             'system_role' => $user->systemRole,
             'team_id' => $user->teamId,
         ]);
-
-        return ['ok' => true];
     }
 
     public function logout(): void
@@ -67,7 +68,8 @@ final class AuthService
      * PLAYER must provide a teamRoleIdent (e.g. 'IGL', 'ENTRY').
      * COACH does not have a team role — teamRoleIdent must be null.
      *
-     * @return array{ok: bool, error?: string}
+     * @throws InvalidArgumentException on validation failure or duplicate data
+     * @throws RuntimeException on invalid role lookup
      */
     public function register(
         string $nickname,
@@ -75,7 +77,7 @@ final class AuthService
         string $password,
         string $systemRoleIdent,
         ?string $teamRoleIdent,
-    ): array
+    ): void
     {
         $nickname = trim($nickname);
         $email = trim($email);
@@ -84,21 +86,21 @@ final class AuthService
 
         $validationError = $this->validateRegistrationInput($nickname, $email, $password, $systemRoleIdent, $teamRoleIdent);
         if (!empty($validationError)) {
-            return ['ok' => false, 'error' => $validationError];
+            throw new InvalidArgumentException($validationError);
         }
 
         if ($this->userRepository->emailExists($email)) {
-            return ['ok' => false, 'error' => 'Email already exists.'];
+            throw new InvalidArgumentException('Email already exists.');
         }
 
         if ($this->userRepository->nicknameExists($nickname)) {
-            return ['ok' => false, 'error' => 'Nickname is already taken.'];
+            throw new InvalidArgumentException('Nickname is already taken.');
         }
 
         $systemRoleId = $this->systemRoleRepository->findIdByIdent($systemRoleIdent);
 
         if (empty($systemRoleId)) {
-            return ['ok' => false, 'error' => 'Invalid system role.'];
+            throw new RuntimeException('Invalid system role.', 400);
         }
 
         $teamRoleId = null;
@@ -107,14 +109,12 @@ final class AuthService
             $teamRoleId = $this->teamRoleRepository->findIdByIdent($teamRoleIdent);
 
             if (empty($teamRoleId)) {
-                return ['ok' => false, 'error' => 'Invalid team role.'];
+                throw new RuntimeException('Invalid team role.', 400);
             }
         }
 
         $password = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $this->userRepository->create($nickname, $email, $password, $systemRoleId, $teamRoleId);
-
-        return ['ok' => true];
     }
 
     /**

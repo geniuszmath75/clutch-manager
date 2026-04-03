@@ -42,10 +42,12 @@ final class PlayerRepository
             ORDER BY tr.ident ASC
         ");
 
-        $stmt->execute([':player_role' => SystemRole::Player->value]);
+        $params = ['player_role' => SystemRole::Player->value];
+
+        $stmt->execute($params);
 
         return array_map(
-            fn(array $row) => $this->hydrate($row),
+            fn(array $row) => Player::fromRow($row),
             $stmt->fetchAll(PDO::FETCH_ASSOC)
         );
     }
@@ -69,11 +71,13 @@ final class PlayerRepository
             WHERE sr.ident = :player_role AND u.id = :id AND u.deleted_at IS NULL
         ");
 
-        $stmt->execute([':player_role' => SystemRole::Player->value, ':id' => $id]);
+        $params = ['player_role' => SystemRole::Player->value, 'id' => $id];
+
+        $stmt->execute($params);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $row ? $this->hydrate($row) : null;
+        return $row ? Player::fromRow($row) : null;
     }
 
     /**
@@ -97,10 +101,12 @@ final class PlayerRepository
             ORDER BY tr.ident ASC
         ");
 
-        $stmt->execute([':player_role' => SystemRole::Player->value, ':team_role_ident' => $teamRoleIdent]);
+        $params = [':player_role' => SystemRole::Player->value, ':team_role_ident' => $teamRoleIdent];
+
+        $stmt->execute($params);
 
         return array_map(
-            fn(array $row) => $this->hydrate($row),
+            fn(array $row) => Player::fromRow($row),
             $stmt->fetchAll(PDO::FETCH_ASSOC)
         );
     }
@@ -150,7 +156,9 @@ final class PlayerRepository
                 AND system_role_id = :system_role_id
         ");
 
-        $stmt->execute([':id' => $id, ':system_role_id' => $systemRoleId]);
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+
+        $stmt->execute($params);
 
         return $stmt->rowCount() === 1;
     }
@@ -172,21 +180,5 @@ final class PlayerRepository
         $stmt->execute($params);
 
         return (bool)$stmt->fetchColumn();
-    }
-
-    /**
-     * Maps a row from the database to a Player object.
-     *
-     * @param array<string, mixed> $row
-     */
-    private function hydrate(array $row): Player
-    {
-        return new Player(
-            id: (int)$row['id'],
-            nickname: $row['nickname'],
-            email: $row['email'],
-            teamRoleIdent: $row['team_role_ident'],
-            isActive: $row['is_active'],
-        );
     }
 }

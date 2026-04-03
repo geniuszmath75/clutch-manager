@@ -3,8 +3,9 @@
 namespace Src\Controller;
 
 use Core\Auth;
-use Core\Database;
 use Core\Response;
+use InvalidArgumentException;
+use RuntimeException;
 use Src\Repository\SystemRoleRepository;
 use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
@@ -47,13 +48,12 @@ final class AuthController
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
 
-        $result = $this->authService->login($email, $password);
-
-        if (!$result['ok']) {
-            Response::redirect('/auth/login?error='.urlencode($result['error']));
+        try {
+            $this->authService->login($email, $password);
+            Response::redirect('/dashboard');
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError('/auth/login', $e->getCode(), $e->getMessage());
         }
-
-        Response::redirect('/dashboard');
     }
 
     /**
@@ -81,19 +81,20 @@ final class AuthController
         $systemRoleIdent = $_POST['system_role_ident'] ?? '';
         $teamRoleIdent = $_POST['team_role_ident'] ?? null;
 
-        $result = $this->authService->register(
-            $nickname,
-            $email,
-            $password,
-            $systemRoleIdent,
-            $teamRoleIdent
-        );
+        try {
+            $this->authService->register(
+                $nickname,
+                $email,
+                $password,
+                $systemRoleIdent,
+                $teamRoleIdent
+            );
 
-        if (!$result['ok']) {
-            Response::redirect('/auth/register?error='.urlencode($result['error']));
+            Response::redirect('/auth/login?registered=1');
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError('/auth/register', $e->getCode(), $e->getMessage());
         }
 
-        Response::redirect('/auth/login?registered=1');
     }
 
     /**
@@ -103,5 +104,19 @@ final class AuthController
     {
         $this->authService->logout();
         Response::redirect('/auth/login');
+    }
+
+    /**
+     * Redirects to the given path with an error message,
+     * or returns JSON for AJAX requests.
+     */
+    private function handleError(string $redirectPath, int $code, string $message): void
+    {
+        if (Auth::isAjaxRequest()) {
+            Response::error($code, $message);
+            return;
+        }
+
+        Response::redirect($redirectPath . '?error=' . urlencode($message));
     }
 }

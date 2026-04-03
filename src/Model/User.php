@@ -15,4 +15,18 @@ final class User
         public readonly ?int $teamId,
         public readonly bool $isActive,
     ) {}
+
+    public static function fromRow(array $row): self
+    {
+        return new self(
+            id: (int)$row['id'],
+            nickname: $row['nickname'],
+            email: $row['email'],
+            password: $row['password'],
+            systemRole: $row['system_role'],
+            teamRole: $row['team_role'] ?? null,
+            teamId: (int)$row['team_id'] ?? null,
+            isActive: $row['is_active'],
+        );
+    }
 }

@@ -93,7 +93,7 @@ final class Auth
      * Checks if the request is from the Fetch API (AJAX).
      * Used to distinguish between redirects and JSON 401/403 requests.
      */
-    private static function isAjaxRequest(): bool
+    public static function isAjaxRequest(): bool
     {
         $requestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
         $accept = $_SERVER['HTTP_ACCEPT'] ?? '';

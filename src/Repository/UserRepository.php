@@ -33,10 +33,11 @@ final class UserRepository
                    LEFT JOIN team_roles tr ON tr.id = u.team_role_id
                    WHERE u.email = :email'
         );
-        $stmt->execute(['email' => $email]);
+        $params = [':email' => $email];
+        $stmt->execute($params);
         $row = $stmt->fetch();
 
-        return $row ? $this->hydrate($row) : null;
+        return $row ? User::fromRow($row) : null;
     }
 
     /**
@@ -46,7 +47,8 @@ final class UserRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT 1 FROM users WHERE email = :email');
-        $stmt->execute(['email' => $email]);
+        $params = [':email' => $email];
+        $stmt->execute($params);
         return $stmt->fetchColumn() !== false;
     }
 
@@ -58,7 +60,8 @@ final class UserRepository
         $stmt = $this->pdo->prepare(
             'SELECT 1 FROM users WHERE nickname = :nickname'
         );
-        $stmt->execute(['nickname' => $nickname]);
+        $params = [':nickname' => $nickname];
+        $stmt->execute($params);
         return $stmt->fetchColumn() !== false;
     }
 
@@ -76,32 +79,14 @@ final class UserRepository
                    VALUES (:nickname, :email, :password, :system_role_id, :team_role_id)
                    RETURNING id'
         );
-        $stmt->execute([
-            'nickname' => $nickname,
-            'email' => $email,
-            'password' => $password,
-            'system_role_id' => $systemRoleId,
-            'team_role_id' => $teamRoleId,
-        ]);
+        $params = [
+            ':nickname' => $nickname,
+            ':email' => $email,
+            ':password' => $password,
+            ':system_role_id' => $systemRoleId,
+            ':team_role_id' => $teamRoleId
+        ];
+        $stmt->execute($params);
         return (int) $stmt->fetchColumn();
-    }
-
-    /**
-     * Maps a row from the database to a User object.
-     *
-     * @param array<string, mixed> $row
-     */
-    private function hydrate(array $row): User
-    {
-        return new User(
-            id: (int) $row['id'],
-            nickname: $row['nickname'],
-            email: $row['email'],
-            password: $row['password'],
-            systemRole: $row['system_role'],
-            teamRole: $row['team_role'] ?? null,
-            teamId: isset($row['team_id']) ? (int) $row['team_id'] : null,
-            isActive: (bool) $row['is_active'],
-        );
     }
 }
