@@ -49,9 +49,6 @@ final class PlayerController
                 ]);
                 return;
             }
-
-            // First page load
-            Response::view("players.html");
         } catch (InvalidArgumentException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }

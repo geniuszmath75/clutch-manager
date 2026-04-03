@@ -61,6 +61,7 @@ $router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser
 // --- Dashboard ---
 $router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
+$router->get('/dashboard/players', [Src\Controller\DashboardController::class, 'showPlayersView']);
 
 // --- Players ---
 $router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);

@@ -17,4 +17,14 @@ final class DashboardController
 
         Response::view('dashboard.html');
     }
+
+    /**
+     * GET /dashboard/players
+     */
+    public function showPlayersView(): void
+    {
+        Auth::requireLogin();
+
+        Response::view('players.html');
+    }
 }
