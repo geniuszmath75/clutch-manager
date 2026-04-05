@@ -31,8 +31,9 @@ final class UserRepository
                    FROM users u
                    JOIN system_roles sr ON sr.id = u.system_role_id
                    LEFT JOIN team_roles tr ON tr.id = u.team_role_id
-                   WHERE u.email = :email'
-        );
+                   WHERE u.email = :email 
+                        AND u.deleted_at IS NULL
+        ');
         $params = [':email' => $email];
         $stmt->execute($params);
         $row = $stmt->fetch();

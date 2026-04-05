@@ -4,6 +4,7 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Src\Enum\SystemRole;
 
 final class DashboardController
 {
@@ -23,8 +24,8 @@ final class DashboardController
      */
     public function showPlayersView(): void
     {
-        Auth::requireLogin();
+        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value, SystemRole::Player->value]);
 
-        Response::view('players.html');
+        Response::view('players.php');
     }
 }

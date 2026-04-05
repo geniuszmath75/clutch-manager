@@ -9,6 +9,13 @@ interface Player {
     isActive: boolean;
 }
 
+interface PaginationMeta {
+    total: number,
+    page: number,
+    pageSize: number;
+    totalPages: number
+}
+
 interface ApiResponse<T> {
     success: boolean;
     data?: T;
@@ -16,11 +23,26 @@ interface ApiResponse<T> {
     message?: string;
 }
 
+interface PaginatedApiResponse<T> extends ApiResponse<T> {
+    meta: PaginationMeta
+}
+
+const userRole = document.body.dataset['role'] ?? '';
+const isPlayer = userRole === 'PLAYER';
+const isCoach = userRole === 'COACH';
+const isAdmin = userRole === 'ADMIN';
+
+const canEdit = isAdmin;
+const canManageActivity = isAdmin || isCoach;
+
 /**
  * Module state
  */
 let currentPlayers: Player[] = [];
 let editingPlayerId: number | null = null;
+let currentPage = 1;
+let currentMeta: PaginationMeta | null = null;
+const pageSize = 5;
 
 /**
  * DOM elements
@@ -36,18 +58,39 @@ const inputNick = document.getElementById('edit-nickname') as HTMLInputElement;
 const selectRole = document.getElementById('edit-team-role') as HTMLSelectElement;
 const btnCancel = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
 const editError = document.getElementById('edit-error')!;
+const paginationEl = document.getElementById('pagination')!;
+const paginInfo = document.getElementById('pagination-info')!;
+const btnPrev = document.getElementById('btn-prev')! as HTMLButtonElement;
+const btnNext = document.getElementById('btn-next')! as HTMLButtonElement;
+const btnAdd = document.getElementById('btn-add-player') as HTMLButtonElement;
+const pageTitle = document.getElementById('page-title')!;
 
-async function fetchPlayers(roleFilter: string = ''): Promise<void> {
+function initUI() {
+    if (isPlayer) {
+        pageTitle.textContent = 'Team';
+        return;
+    }
+
+    filterEl.hidden = false;
+
+    if (canManageActivity) {
+        btnAdd.hidden = false;
+    }
+}
+
+async function fetchPlayers(page: number = 1, roleFilter: string = ''): Promise<void> {
     showLoading();
 
-    const url = roleFilter ? `/players?role=${encodeURIComponent(roleFilter)}` : '/players';
+    let url: string;
+
+    url = roleFilter ? `/players?role=${encodeURIComponent(roleFilter)}` : `/players?page=${page}&pageSize=${pageSize}`;
 
     try {
         const res = await fetch(url, {
             headers: {'Accept': 'application/json'}
         });
 
-        const json: ApiResponse<Player[]> = await res.json();
+        const json: PaginatedApiResponse<Player[]> = await res.json();
 
         if (!res.ok || !json.success) {
             showError(json.error ?? 'Fetching players error.');
@@ -55,7 +98,11 @@ async function fetchPlayers(roleFilter: string = ''): Promise<void> {
         }
 
         currentPlayers = json.data ?? [];
+        currentMeta = json.meta ?? null;
+        currentPage = page;
+
         renderTable(currentPlayers);
+        renderPagination(currentMeta);
     } catch {
         showError('Server connection error');
     }
@@ -84,26 +131,37 @@ async function updatePlayer(id: number, data: Partial<Pick<Player, 'nickname' | 
     return json.data;
 }
 
-async function deactivatePlayer(id: number): Promise<void> {
+async function setPlayerActivity(id: number, active: boolean): Promise<void> {
     try {
-        const res = await fetch(`/players/${id}`, {
+        const action = active ? 'activate' : 'deactivate';
+        const res = await fetch(`/players/${id}/${action}`, {
             method: 'PATCH',
-            headers: {
-                'ContentType': 'application/json',
-                'Accept': 'application/json'
-            }
+            headers: {'Accept': 'application/json'},
         });
-
-        const json: ApiResponse<never> = await res.json();
+        const json: ApiResponse<Player> = await res.json();
 
         if (!res.ok || !json.success) {
-            showError(json.error ?? 'Deactivating player error.');
-            return;
+            showError(json.error ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
         }
     } catch {
         showError('Server connection error');
     }
+}
 
+async function deletePlayer(id: number): Promise<void> {
+    try {
+        const res = await fetch(`/players/${id}`, {
+            method: 'DELETE',
+            headers: {'Accept': 'application/json'},
+        });
+        const json: ApiResponse<Player> = await res.json();
+
+        if (!res.ok || !json.success) {
+            showError(json.error ?? 'Failed to delete player.');
+        }
+    } catch {
+        showError('Server connection error');
+    }
 }
 
 /**
@@ -122,23 +180,58 @@ function renderTable(players: Player[]): void {
         const tr = document.createElement('tr');
         tr.dataset['id'] = String(player.id);
 
+        const statusLabel = player.isActive ? 'Active' : 'Inactive';
+        let actionsHtml: string;
+
+        if (isPlayer) {
+            tr.innerHTML = `
+                <td>${escapeHtml(player.nickname)}</td>
+                <td>${escapeHtml(player.teamRoleIdent ?? '—')}</td>
+                <td>${statusLabel}</td>
+            `;
+            tbodyEl.appendChild(tr);
+            continue;
+        }
+
+        const editBtn = canEdit
+            ? `<button class="btn-edit" data-id="${player.id}">Edit player</button>`
+            : '';
+
+        const toggleBtn = canManageActivity
+            ? player.isActive
+                ? `<button class="btn-deactivate" data-id="${player.id}">Deactivate player</button>`
+                : `<button class="btn-activate"   data-id="${player.id}">Activate player</button>`
+            : '';
+
+        const deleteBtn = canEdit
+            ? `<button class="btn-delete" data-id="${player.id}">Delete player</button>`
+            : '';
+
+        actionsHtml = `${editBtn}${toggleBtn}${deleteBtn}` || '-';
+
         tr.innerHTML = `
             <td>${escapeHtml(player.nickname)}</td>
             <td>${escapeHtml(player.teamRoleIdent ?? '—')}</td>
-            <td>${player.isActive ? 'Active' : 'Inactive'}</td>
-            <td class="actions-col">
-                <button class="btn-edit" data-id="${player.id}">Edit player</button>
-                <button class="btn-deactivate" data-id="${player.id}"
-                    ${!player.isActive ? 'disabled' : ''}>
-                    Deactivate player
-                </button>
-            </td>
+            <td>${statusLabel}</td>
+            <td class="actions-col">${actionsHtml}</td>
         `;
 
         tbodyEl.appendChild(tr);
     }
 
     showList();
+}
+
+function renderPagination(meta: PaginationMeta | null): void {
+    if (meta === null || meta.totalPages <= 1) {
+        paginationEl.hidden = true;
+        return;
+    }
+
+    paginationEl.hidden = false;
+    paginInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} players)`;
+    btnPrev.disabled = meta.page <= 1;
+    btnNext.disabled = meta.page >= meta.totalPages;
 }
 
 /**
@@ -162,8 +255,22 @@ function closeModal(): void {
  * Event listeners
  */
 filterEl.addEventListener('change', () => {
-    fetchPlayers(filterEl.value);
+    currentPage = 1;
+    fetchPlayers(currentPage, filterEl.value);
 })
+
+// Pagination
+btnPrev.addEventListener('click', () => {
+    if (currentPage > 1) {
+        fetchPlayers(currentPage - 1, filterEl.value);
+    }
+});
+
+btnNext.addEventListener('click', () => {
+    if (currentMeta && currentPage < currentMeta.totalPages) {
+        fetchPlayers(currentPage + 1, filterEl.value);
+    }
+});
 
 tbodyEl.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
@@ -175,12 +282,28 @@ tbodyEl.addEventListener('click', (e: Event) => {
         if (player) openEditModal(player);
     }
 
+    if (target.classList.contains('btn-activate')) {
+        if (!confirm(`Activate player #${id}?`)) return;
+
+        setPlayerActivity(id, true)
+            .then(() => fetchPlayers(currentPage, filterEl.value))
+            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+    }
+
     if (target.classList.contains('btn-deactivate')) {
         if (!confirm(`Deactivate player #${id}?`)) return;
 
-        deactivatePlayer(id)
-            .then(() => fetchPlayers(filterEl.value))
+        setPlayerActivity(id, false)
+            .then(() => fetchPlayers(currentPage, filterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+    }
+
+    if (target.classList.contains('btn-delete')) {
+        if (!confirm(`Delete player #${id}? This operation cannot be undone.`)) return;
+        deletePlayer(id)
+            .then(() => fetchPlayers(currentPage, filterEl.value))
+            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+        return;
     }
 });
 
@@ -201,7 +324,7 @@ formEdit.addEventListener('submit', async (e: Event) => {
         });
 
         closeModal();
-        await fetchPlayers(filterEl.value);
+        await fetchPlayers(currentPage, filterEl.value);
     } catch (err: unknown) {
         editError.textContent = err instanceof Error ? err.message : 'An error occurred';
         editError.hidden = false;
@@ -240,4 +363,5 @@ function escapeHtml(str: string): string {
         .replace(/"/g, '&quot;');
 }
 
+initUI();
 fetchPlayers();

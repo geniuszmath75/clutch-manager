@@ -22,11 +22,14 @@ final class PlayerRepository
 
     /**
      * Returns all active players with the PLAYER role, along with the team role name.
+     * Inactive players (is_active = false) are included - visible to ADMIN and COACH.
      *
      * @return Player[]
      */
-    public function findAll(): array
+    public function findAll(int $page = 1, int $pageSize = 5): array
     {
+        $offset = ($page - 1) * $pageSize;
+
         $stmt = $this->pdo->prepare("
             SELECT
                 u.id,
@@ -39,11 +42,11 @@ final class PlayerRepository
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
             WHERE sr.ident = :player_role AND u.deleted_at IS NULL
-            ORDER BY tr.ident ASC
+            ORDER BY u.nickname ASC
+            LIMIT :page_size OFFSET :offset
         ");
 
-        $params = ['player_role' => SystemRole::Player->value];
-
+        $params = ['player_role' => SystemRole::Player->value, 'page_size' => $pageSize, 'offset' => $offset];
         $stmt->execute($params);
 
         return array_map(
@@ -81,6 +84,28 @@ final class PlayerRepository
     }
 
     /**
+     * Returns the total number of players (for pagination).
+     * Excludes soft deleted players.
+     */
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT 
+                COUNT(u.id)
+            FROM users u
+            JOIN system_roles sr ON sr.id = u.system_role_id
+            WHERE sr.ident = :player_role 
+                AND u.deleted_at IS NULL
+            
+        ");
+
+        $params = ['player_role' => SystemRole::Player->value];
+        $stmt->execute($params);
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * Returns players with the specified team role.
      *
      * @return Player[]
@@ -103,6 +128,35 @@ final class PlayerRepository
 
         $params = [':player_role' => SystemRole::Player->value, ':team_role_ident' => $teamRoleIdent];
 
+        $stmt->execute($params);
+
+        return array_map(
+            fn(array $row) => Player::fromRow($row),
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
+    }
+
+    public function findByTeamId(int $teamId): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT
+                u.id,
+                u.nickname,
+                u.email,
+                tr.ident AS team_role_ident,
+                u.is_active
+            FROM users u
+            JOIN system_roles sr ON sr.id = u.system_role_id
+            LEFT JOIN team_roles tr ON tr.id = u.team_role_id
+            WHERE 
+                sr.ident = :player_role
+                AND u.team_id = :team_id
+                AND u.is_active = true
+                AND u.deleted_at IS NULL
+            ORDER BY u.nickname ASC
+        ");
+
+        $params = ['player_role' => SystemRole::Player->value, 'team_id' => $teamId];
         $stmt->execute($params);
 
         return array_map(
@@ -147,11 +201,34 @@ final class PlayerRepository
         return $stmt->rowCount() === 1;
     }
 
+    /**
+     * Deactivates a player - reversible (is_active = false).
+     * The player cannot log in, but appears in the ADMIN/COACH results.
+     */
     public function deactivate(int $id, int $systemRoleId): bool
     {
         $stmt = $this->pdo->prepare("
             UPDATE users
             SET is_active = false
+            WHERE id = :id
+                AND system_role_id = :system_role_id
+        ");
+
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+
+        $stmt->execute($params);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Activates the player - reverse deactivate().
+     */
+    public function activate(int $id, int $systemRoleId): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE users
+            SET is_active = true
             WHERE id = :id
                 AND system_role_id = :system_role_id
         ");
@@ -180,5 +257,31 @@ final class PlayerRepository
         $stmt->execute($params);
 
         return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * DELETE
+     */
+
+    /**
+     * Deletes a player permanently - soft delete via deleted_at.
+     * Removes the player from all SELECT results.
+     * ADMIN only.
+     */
+    public function delete(int $id, int $systemRoleId): bool
+    {
+        $stmt = $this->pdo->prepare("
+           UPDATE users
+           SET deleted_at = NOW()
+           WHERE id = :id
+                AND deleted_at IS NULL
+                AND system_role_id = :system_role_id
+        ");
+
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+
+        $stmt->execute($params);
+
+        return $stmt->rowCount() === 1;
     }
 }

@@ -39,6 +39,15 @@ final class Auth
     }
 
     /**
+     *
+     */
+    public static function teamId(): ?int
+    {
+        $user = self::user();
+        return $user['team_id'] ?? null;
+    }
+
+    /**
      * Checks if the logged-in user has the specified role.
      *
      * @param string|string[] $roles A single role or an array of roles

@@ -24,11 +24,24 @@ final class PlayerService
     /**
      * Returns all users with PLAYER system role
      *
-     * @return Player[]
+     * @return array{players: Player[], total: int, page: int, perPage: int, totalPages: int}
      */
-    public function getAll(): array
+    public function getAll(int $page = 1, int $pageSize = 5): array
     {
-        return $this->playerRepository->findAll();
+        $page = max(1, $page);
+        $pageSize = max(1, min(50, $pageSize));
+
+        $players = $this->playerRepository->findAll($page, $pageSize);
+        $total = $this->playerRepository->countAll();
+        $totalPages = (int)ceil($total / $pageSize);
+
+        return [
+            'players' => $players,
+            'total' => $total,
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'totalPages' => $totalPages,
+        ];
     }
 
     /**
@@ -57,6 +70,17 @@ final class PlayerService
     {
         $teamRoleIdent = $this->validateTeamRoleIdent($teamRoleIdent);
         return $this->playerRepository->findByTeamRole($teamRoleIdent);
+    }
+
+    /**
+     * Returns players belonging to the logged-in PLAYER's team.
+     *
+     * @return Player[]
+     * @throws InvalidArgumentException if teamId is null
+     */
+    public function getByTeamId(int $teamId): array
+    {
+        return $this->playerRepository->findByTeamId($teamId);
     }
 
     /**
@@ -113,6 +137,48 @@ final class PlayerService
 
     public function deactivate(int $id): void
     {
+        $player = $this->getById($id);
+
+        $systemRoleId = $this->systemRoleRepository->findIdByIdent(SystemRole::Player->value);
+
+        if (empty($systemRoleId)) {
+            throw new InvalidArgumentException('Invalid system role', 400);
+        }
+
+        if (!$player->isActive) {
+            throw new RuntimeException('Player is no longer active', 409);
+        }
+
+        $success = $this->playerRepository->deactivate($id, $systemRoleId);
+
+        if (!$success) {
+            throw new RuntimeException('Failed to deactivate player', 500);
+        }
+    }
+
+    public function activate(int $id): void
+    {
+        $player = $this->getById($id);
+
+        $systemRoleId = $this->systemRoleRepository->findIdByIdent(SystemRole::Player->value);
+
+        if (empty($systemRoleId)) {
+            throw new InvalidArgumentException('Invalid system role', 400);
+        }
+
+        if ($player->isActive) {
+            throw new RuntimeException('Player is already active', 409);
+        }
+
+        $success = $this->playerRepository->activate($id, $systemRoleId);
+
+        if (!$success) {
+            throw new RuntimeException('Failed to activate player', 500);
+        }
+    }
+
+    public function delete(int $id): void
+    {
         $this->getById($id);
 
         $systemRoleId = $this->systemRoleRepository->findIdByIdent(SystemRole::Player->value);
@@ -121,10 +187,10 @@ final class PlayerService
             throw new InvalidArgumentException('Invalid system role', 400);
         }
 
-        $success = $this->playerRepository->deactivate($id, $systemRoleId);
+        $success = $this->playerRepository->delete($id, $systemRoleId);
 
         if (!$success) {
-            throw new RuntimeException('Failed to deactivate player', 500);
+            throw new RuntimeException('Failed to delete player', 500);
         }
     }
 

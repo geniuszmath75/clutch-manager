@@ -29,27 +29,75 @@ final class PlayerController
     }
 
     /**
-     * GET /players
+     * GET /players?page=1&pageSize=5
      */
     public function getPlayers(): void
     {
-        Auth::requireLogin();
+        Auth::requireRole([SystemRole::Coach->value, SystemRole::Admin->value, SystemRole::Player->value]);
+
+        $sessionRole = Auth::systemRole();
 
         $filterRole = isset($_GET['role']) ? strtoupper(trim($_GET['role'])) : null;
 
         try {
-            $players = !empty($filterRole)
-                ? $this->playerService->getByTeamRole($filterRole)
-                : $this->playerService->getAll();
+            if ($sessionRole === SystemRole::Player->value) {
+                $teamId = Auth::teamId();
 
-            if (Auth::isAjaxRequest()) {
+                if ($teamId === null) {
+                    Response::json(['success' => true, 'data' => [], 'meta' => []]);
+                    return;
+                }
+
+                $players = $this->playerService->getByTeamId($teamId);
+                Response::json(['success' => true, 'data' => $players]);
+                return;
+            }
+
+            if (!empty($filterRole)) {
+                $players = $this->playerService->getByTeamRole($filterRole);
                 Response::json([
                     'success' => true,
                     'data' => $players
                 ]);
                 return;
             }
+
+            $page = max(1, intval($_GET['page']));
+            $pageSize = min(50, intval($_GET['pageSize']));
+
+            $result = $this->playerService->getAll($page, $pageSize);
+
+            Response::json([
+                'success' => true,
+                'data' => $result['players'],
+                'meta' => [
+                    'total' => $result['total'],
+                    'page' => $result['page'],
+                    'pageSize' => $result['pageSize'],
+                    'totalPages' => $result['totalPages'],
+                ]
+            ]);
         } catch (InvalidArgumentException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /teams/{id}
+     */
+    public function getTeamById(string $id): void
+    {
+        Auth::requireLogin();
+        $id = intval($id);
+
+        try {
+            $team = $this->playerService->getByTeamId($id);
+
+            Response::json([
+                'success' => true,
+                'data' => $team
+            ]);
+        } catch (RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
     }
@@ -60,7 +108,7 @@ final class PlayerController
 
     public function updatePlayer(string $id): void
     {
-        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
+        Auth::requireRole(SystemRole::Admin->value);
         $id = intval($id);
 
         $data = $this->parseJsonBody();
@@ -88,7 +136,7 @@ final class PlayerController
     }
 
     /**
-     * PATCH /player/{id}
+     * PATCH /players/{id}/deactivate
      */
     public function deactivatePlayer(string $id): void
     {
@@ -103,6 +151,44 @@ final class PlayerController
                 'message' => 'Player deactivated successfully.'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * PATCH /players/{id}/activate
+     */
+    public function activatePlayer(string $id): void
+    {
+        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
+        $id = intval($id);
+
+        try {
+            $this->playerService->activate($id);
+
+            Response::json([
+                'success' => true,
+                'message' => 'Player activated successfully.'
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /players/{id}
+     */
+    public function deletePlayer(string $id): void
+    {
+        Auth::requireRole(SystemRole::Admin->value);
+
+        try {
+            $this->playerService->delete($id);
+            Response::json([
+                'success' => true,
+                'message' => 'Player deleted successfully.'
+            ]);
+        } catch (RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
     }
