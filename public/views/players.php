@@ -19,22 +19,28 @@
     <header class="page-header">
         <h1 id="page-title">Players</h1>
         <div class="page-actions">
-            <!-- Filtrowanie po roli -->
-            <select id="role-filter" aria-label="Filtruj po roli" hidden>
-                <option value="">Wszystkie role</option>
+            <!-- Filtering by role -->
+            <select id="role-filter" aria-label="Filter by role">
+                <option value="">All roles</option>
                 <option value="IGL">IGL</option>
                 <option value="AWP">AWP</option>
                 <option value="ENTRY">Entry Fragger</option>
                 <option value="SUPPORT">Support</option>
                 <option value="LURKER">Lurker</option>
             </select>
-            <!-- Przycisk dodawania — widoczny tylko dla ADMIN/CAPTAIN (obsługa przez TS) -->
-            <button id="btn-add-player" hidden>+ Dodaj gracza</button>
+            <!-- Filtering by status -->
+            <select id="status-filter" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+            </select>
+            <!-- Przycisk dodawania — widoczny tylko dla ADMIN/COACH (obsługa przez TS) -->
+            <button id="btn-add-player" hidden>+ Add player to team</button>
         </div>
     </header>
 
     <!-- Stan ładowania -->
-    <div id="players-loading" aria-live="polite">Ładowanie graczy…</div>
+    <div id="players-loading" aria-live="polite">Players loading...</div>
 
     <!-- Stan błędu -->
     <div id="players-error" hidden role="alert"></div>
@@ -45,7 +51,7 @@
             <thead>
             <tr>
                 <th scope="col">Nickname</th>
-                <th scope="col">Rola</th>
+                <th scope="col">Role</th>
                 <th scope="col">Status</th>
                 <th scope="col" class="actions-col">Actions</th>
             </tr>
@@ -56,10 +62,10 @@
         </table>
 
         <!-- Paginacja — widoczna tylko gdy totalPages > 1 -->
-        <nav id="pagination" aria-label="Paginacja graczy" hidden>
-            <button id="btn-prev" aria-label="Poprzednia strona">‹</button>
+        <nav id="pagination" aria-label="Player pagination" hidden>
+            <button id="btn-prev" aria-label="Previous page">‹</button>
             <span id="pagination-info"></span>
-            <button id="btn-next" aria-label="Następna strona">›</button>
+            <button id="btn-next" aria-label="Next page">›</button>
         </nav>
     </div>
 

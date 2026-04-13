@@ -19,8 +19,8 @@ interface PaginationMeta {
 interface ApiResponse<T> {
     success: boolean;
     data?: T;
-    error?: string;
-    message?: string;
+    statusCode?: number;
+    errorMessage?: string;
 }
 
 interface PaginatedApiResponse<T> extends ApiResponse<T> {
@@ -51,7 +51,8 @@ const loadingEl = document.getElementById('players-loading')!;
 const errorEl = document.getElementById('players-error')!;
 const listEl = document.getElementById('players-list')!;
 const tbodyEl = document.getElementById('players-tbody')!;
-const filterEl = document.getElementById('role-filter') as HTMLSelectElement;
+const roleFilterEl = document.getElementById('role-filter') as HTMLSelectElement;
+const statusFilterEl = document.getElementById('status-filter') as HTMLSelectElement;
 const modal = document.getElementById('modal-edit-player') as HTMLDialogElement;
 const formEdit = document.getElementById('form-edit-player') as HTMLFormElement;
 const inputNick = document.getElementById('edit-nickname') as HTMLInputElement;
@@ -66,24 +67,28 @@ const btnAdd = document.getElementById('btn-add-player') as HTMLButtonElement;
 const pageTitle = document.getElementById('page-title')!;
 
 function initUI() {
-    if (isPlayer) {
-        pageTitle.textContent = 'Team';
-        return;
-    }
-
-    filterEl.hidden = false;
+    if (isPlayer) return;
 
     if (canManageActivity) {
         btnAdd.hidden = false;
     }
 }
 
-async function fetchPlayers(page: number = 1, roleFilter: string = ''): Promise<void> {
+async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFilter: string = ''): Promise<void> {
     showLoading();
 
-    let url: string;
+    let filters: string = "";
 
-    url = roleFilter ? `/players?role=${encodeURIComponent(roleFilter)}` : `/players?page=${page}&pageSize=${pageSize}`;
+    if (roleFilter) {
+        filters += `&role=${encodeURIComponent(roleFilter)}`;
+    }
+    if (statusFilter) {
+        const isActive = encodeURIComponent(statusFilter) === 'ACTIVE';
+        filters += `&is_active=${isActive}`;
+
+    }
+
+    const url: string = `/players?page=${page}&pageSize=${pageSize}${filters}`;
 
     try {
         const res = await fetch(url, {
@@ -93,7 +98,7 @@ async function fetchPlayers(page: number = 1, roleFilter: string = ''): Promise<
         const json: PaginatedApiResponse<Player[]> = await res.json();
 
         if (!res.ok || !json.success) {
-            showError(json.error ?? 'Fetching players error.');
+            showError(json.errorMessage ?? 'Fetching players error.');
             return;
         }
 
@@ -125,7 +130,7 @@ async function updatePlayer(id: number, data: Partial<Pick<Player, 'nickname' | 
     const json: ApiResponse<Player> = await res.json();
 
     if (!res.ok || !json.success || !json.data) {
-        throw new Error(json.error ?? 'Failed to update player.');
+        throw new Error(json.errorMessage ?? 'Failed to update player.');
     }
 
     return json.data;
@@ -141,7 +146,7 @@ async function setPlayerActivity(id: number, active: boolean): Promise<void> {
         const json: ApiResponse<Player> = await res.json();
 
         if (!res.ok || !json.success) {
-            showError(json.error ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
+            showError(json.errorMessage ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
         }
     } catch {
         showError('Server connection error');
@@ -157,7 +162,7 @@ async function deletePlayer(id: number): Promise<void> {
         const json: ApiResponse<Player> = await res.json();
 
         if (!res.ok || !json.success) {
-            showError(json.error ?? 'Failed to delete player.');
+            showError(json.errorMessage ?? 'Failed to delete player.');
         }
     } catch {
         showError('Server connection error');
@@ -223,7 +228,7 @@ function renderTable(players: Player[]): void {
 }
 
 function renderPagination(meta: PaginationMeta | null): void {
-    if (meta === null || meta.totalPages <= 1) {
+    if (meta === null) {
         paginationEl.hidden = true;
         return;
     }
@@ -254,21 +259,26 @@ function closeModal(): void {
 /**
  * Event listeners
  */
-filterEl.addEventListener('change', () => {
+roleFilterEl.addEventListener('change', () => {
     currentPage = 1;
-    fetchPlayers(currentPage, filterEl.value);
+    fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+})
+
+statusFilterEl.addEventListener('change', () => {
+    currentPage = 1;
+    fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
 })
 
 // Pagination
 btnPrev.addEventListener('click', () => {
     if (currentPage > 1) {
-        fetchPlayers(currentPage - 1, filterEl.value);
+        fetchPlayers(currentPage - 1, roleFilterEl.value, statusFilterEl.value);
     }
 });
 
 btnNext.addEventListener('click', () => {
     if (currentMeta && currentPage < currentMeta.totalPages) {
-        fetchPlayers(currentPage + 1, filterEl.value);
+        fetchPlayers(currentPage + 1, roleFilterEl.value, statusFilterEl.value);
     }
 });
 
@@ -286,7 +296,7 @@ tbodyEl.addEventListener('click', (e: Event) => {
         if (!confirm(`Activate player #${id}?`)) return;
 
         setPlayerActivity(id, true)
-            .then(() => fetchPlayers(currentPage, filterEl.value))
+            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
     }
 
@@ -294,14 +304,14 @@ tbodyEl.addEventListener('click', (e: Event) => {
         if (!confirm(`Deactivate player #${id}?`)) return;
 
         setPlayerActivity(id, false)
-            .then(() => fetchPlayers(currentPage, filterEl.value))
+            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
     }
 
     if (target.classList.contains('btn-delete')) {
         if (!confirm(`Delete player #${id}? This operation cannot be undone.`)) return;
         deletePlayer(id)
-            .then(() => fetchPlayers(currentPage, filterEl.value))
+            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
         return;
     }
@@ -324,7 +334,7 @@ formEdit.addEventListener('submit', async (e: Event) => {
         });
 
         closeModal();
-        await fetchPlayers(currentPage, filterEl.value);
+        await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
     } catch (err: unknown) {
         editError.textContent = err instanceof Error ? err.message : 'An error occurred';
         editError.hidden = false;

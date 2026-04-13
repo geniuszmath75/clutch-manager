@@ -29,7 +29,7 @@ final class PlayerController
     }
 
     /**
-     * GET /players?page=1&pageSize=5
+     * GET /players?page=1&pageSize=5&filters
      */
     public function getPlayers(): void
     {
@@ -37,10 +37,10 @@ final class PlayerController
 
         $sessionRole = Auth::systemRole();
 
-        $filterRole = isset($_GET['role']) ? strtoupper(trim($_GET['role'])) : null;
+        $filters = [];
 
         try {
-            if ($sessionRole === SystemRole::Player->value) {
+            if ($sessionRole === SystemRole::Player->value || $sessionRole === SystemRole::Coach->value) {
                 $teamId = Auth::teamId();
 
                 if ($teamId === null) {
@@ -48,24 +48,24 @@ final class PlayerController
                     return;
                 }
 
-                $players = $this->playerService->getByTeamId($teamId);
-                Response::json(['success' => true, 'data' => $players]);
-                return;
+                $filters['team_id'] = $teamId;
+                $filters['is_active'] = true;
             }
 
-            if (!empty($filterRole)) {
-                $players = $this->playerService->getByTeamRole($filterRole);
-                Response::json([
-                    'success' => true,
-                    'data' => $players
-                ]);
-                return;
+            $roleFilter = isset($_GET['role']) ? strtoupper(trim($_GET['role'])) : null;
+            $statusFilter = $_GET['is_active'] ?? null;
+
+            if (!empty($roleFilter)) {
+                $filters['team_role_ident'] = $roleFilter;
+            }
+            if (!empty($statusFilter)) {
+                $filters['is_active'] = $statusFilter;
             }
 
             $page = max(1, intval($_GET['page']));
             $pageSize = min(50, intval($_GET['pageSize']));
 
-            $result = $this->playerService->getAll($page, $pageSize);
+            $result = $this->playerService->getAll($filters, $page, $pageSize);
 
             Response::json([
                 'success' => true,
@@ -78,26 +78,6 @@ final class PlayerController
                 ]
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
-        }
-    }
-
-    /**
-     * GET /teams/{id}
-     */
-    public function getTeamById(string $id): void
-    {
-        Auth::requireLogin();
-        $id = intval($id);
-
-        try {
-            $team = $this->playerService->getByTeamId($id);
-
-            Response::json([
-                'success' => true,
-                'data' => $team
-            ]);
-        } catch (RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
     }

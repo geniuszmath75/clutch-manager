@@ -26,10 +26,11 @@ final class PlayerRepository
      *
      * @return Player[]
      */
-    public function findAll(int $page = 1, int $pageSize = 5): array
+    public function findAll(array $filters = [], int $page = 1, int $pageSize = 5): array
     {
-        $offset = ($page - 1) * $pageSize;
+        [$conditions, $params] = $this->buildConditions($filters);
 
+        error_log($conditions);
         $stmt = $this->pdo->prepare("
             SELECT
                 u.id,
@@ -41,13 +42,21 @@ final class PlayerRepository
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
-            WHERE sr.ident = :player_role AND u.deleted_at IS NULL
+            WHERE sr.ident = :player_role
+                AND u.deleted_at IS NULL
+                " . $conditions . "
             ORDER BY u.nickname ASC
             LIMIT :page_size OFFSET :offset
         ");
 
-        $params = ['player_role' => SystemRole::Player->value, 'page_size' => $pageSize, 'offset' => $offset];
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $offset = ($page - 1) * $pageSize;
+        $stmt->bindValue(':page_size', $pageSize, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
 
         return array_map(
             fn(array $row) => Player::fromRow($row),
@@ -87,84 +96,29 @@ final class PlayerRepository
      * Returns the total number of players (for pagination).
      * Excludes soft deleted players.
      */
-    public function countAll(): int
+    public function countAll(array $filters = []): int
     {
+        [$conditions, $params] = $this->buildConditions($filters);
+
         $stmt = $this->pdo->prepare("
             SELECT 
                 COUNT(u.id)
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
+            LEFT JOIN team_roles tr ON tr.id = u.team_role_id
             WHERE sr.ident = :player_role 
                 AND u.deleted_at IS NULL
-            
+                " . $conditions . "
         ");
 
-        $params = ['player_role' => SystemRole::Player->value];
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
 
         return (int)$stmt->fetchColumn();
     }
-
-    /**
-     * Returns players with the specified team role.
-     *
-     * @return Player[]
-     */
-    public function findByTeamRole(string $teamRoleIdent): array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT
-                u.id,
-                u.nickname,
-                u.email,
-                tr.ident AS team_role_ident,
-                u.is_active
-            FROM users u
-            JOIN system_roles sr ON sr.id = u.system_role_id
-            JOIN team_roles tr ON tr.id = u.team_role_id
-            WHERE sr.ident = :player_role AND tr.ident = :team_role_ident AND u.deleted_at IS NULL
-            ORDER BY tr.ident ASC
-        ");
-
-        $params = [':player_role' => SystemRole::Player->value, ':team_role_ident' => $teamRoleIdent];
-
-        $stmt->execute($params);
-
-        return array_map(
-            fn(array $row) => Player::fromRow($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
-    }
-
-    public function findByTeamId(int $teamId): array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT
-                u.id,
-                u.nickname,
-                u.email,
-                tr.ident AS team_role_ident,
-                u.is_active
-            FROM users u
-            JOIN system_roles sr ON sr.id = u.system_role_id
-            LEFT JOIN team_roles tr ON tr.id = u.team_role_id
-            WHERE 
-                sr.ident = :player_role
-                AND u.team_id = :team_id
-                AND u.is_active = true
-                AND u.deleted_at IS NULL
-            ORDER BY u.nickname ASC
-        ");
-
-        $params = ['player_role' => SystemRole::Player->value, 'team_id' => $teamId];
-        $stmt->execute($params);
-
-        return array_map(
-            fn(array $row) => Player::fromRow($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
-    }
-
     /**
      * UPDATE
      */
@@ -283,5 +237,38 @@ final class PlayerRepository
         $stmt->execute($params);
 
         return $stmt->rowCount() === 1;
+    }
+
+
+    /**
+     * Builds a WHERE fragment and a parameter array based on filters.
+     * Filter keys come exclusively from trusted service code—not from user input.
+     *
+     * @param array{team_role_ident?: string, team_id?: int, is_active?: bool} $filters
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function buildConditions(array $filters): array
+    {
+        $conditions = '';
+        $params = [];
+
+        $params['player_role'] = SystemRole::Player->value;
+
+        if (isset($filters['team_role_ident'])) {
+            $conditions .= ' AND tr.ident = :team_role_ident';
+            $params['team_role_ident'] = $filters['team_role_ident'];
+        }
+
+        if (isset($filters['team_id'])) {
+            $conditions .= ' AND u.team_id = :team_id';
+            $params['team_id'] = $filters['team_id'];
+        }
+
+        if (isset($filters['is_active'])) {
+            $conditions .= ' AND u.is_active = :is_active';
+            $params['is_active'] = $filters['is_active'];
+        }
+
+        return [$conditions, $params];
     }
 }

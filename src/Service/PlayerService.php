@@ -26,13 +26,17 @@ final class PlayerService
      *
      * @return array{players: Player[], total: int, page: int, perPage: int, totalPages: int}
      */
-    public function getAll(int $page = 1, int $pageSize = 5): array
+    public function getAll(array $filters = [], int $page = 1, int $pageSize = 5): array
     {
         $page = max(1, $page);
         $pageSize = max(1, min(50, $pageSize));
 
-        $players = $this->playerRepository->findAll($page, $pageSize);
-        $total = $this->playerRepository->countAll();
+        if (isset($filters['team_role_ident'])) {
+            $filters['team_role_ident'] = $this->validateTeamRoleIdent($filters['team_role_ident']);
+        }
+
+        $players = $this->playerRepository->findAll($filters, $page, $pageSize);
+        $total = $this->playerRepository->countAll($filters);
         $totalPages = (int)ceil($total / $pageSize);
 
         return [
@@ -58,29 +62,6 @@ final class PlayerService
         }
 
         return $player;
-    }
-
-    /**
-     * Returns users with PLAYER system role and given team role
-     *
-     * @return Player[]
-     * @throws InvalidArgumentException gdy rola jest nieprawidłowa
-     */
-    public function getByTeamRole(string $teamRoleIdent): array
-    {
-        $teamRoleIdent = $this->validateTeamRoleIdent($teamRoleIdent);
-        return $this->playerRepository->findByTeamRole($teamRoleIdent);
-    }
-
-    /**
-     * Returns players belonging to the logged-in PLAYER's team.
-     *
-     * @return Player[]
-     * @throws InvalidArgumentException if teamId is null
-     */
-    public function getByTeamId(int $teamId): array
-    {
-        return $this->playerRepository->findByTeamId($teamId);
     }
 
     /**
@@ -204,18 +185,18 @@ final class PlayerService
     private function validateNickname(mixed $nickname): string
     {
         if (!is_string($nickname)) {
-            throw new InvalidArgumentException('Nickname must be a string.');
+            throw new InvalidArgumentException('Nickname must be a string.', 400);
         }
 
         $nickname = trim($nickname);
 
         if (strlen($nickname) < 3 || strlen($nickname) > 100) {
-            throw new InvalidArgumentException('Nickname must be between 3 and 100 characters.');
+            throw new InvalidArgumentException('Nickname must be between 3 and 100 characters.', 400);
         }
 
         // Allowed: letters, numbers, underscore, dash
         if (!preg_match('/^[\p{L}\p{N}_\-]+$/u', $nickname)) {
-            throw new InvalidArgumentException('Nickname contains invalid characters.');
+            throw new InvalidArgumentException('Nickname contains invalid characters.', 400);
         }
 
         return $nickname;
@@ -227,7 +208,7 @@ final class PlayerService
     private function validateTeamRoleIdent(mixed $ident): string
     {
         if (!is_string($ident)) {
-            throw new InvalidArgumentException("Team role identifier must be a string");
+            throw new InvalidArgumentException("Team role identifier must be a string", 400);
         }
 
         $ident = strtoupper(trim($ident));
@@ -235,7 +216,7 @@ final class PlayerService
         $validIdents = array_map(fn(TeamRole $r) => $r->value, TeamRole::cases());
 
         if (!in_array($ident, $validIdents, true)) {
-            throw new InvalidArgumentException("Invalid team role identifier. Allowed values are: " . implode(', ', $validIdents));
+            throw new InvalidArgumentException("Invalid team role identifier. Allowed values are: " . implode(', ', $validIdents), 400);
         }
 
         return $ident;

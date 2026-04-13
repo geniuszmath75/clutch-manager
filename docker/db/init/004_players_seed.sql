@@ -5,16 +5,34 @@
 -- =============================================================================
 
 -- Dodatkowi gracze testowi (uzupełniają 3 devowych z 003_users.sql)
-INSERT INTO users (nickname, email, password, system_role_id, team_role_id)
-SELECT u.nickname,
-       u.email,
-       '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
-       sr.id,
-       tr.id
-FROM (VALUES ('PRa', 'pra@clutch.gg', 'PLAYER', 'ENTRY'),
-             ('Tauson', 'tauson@clutch.gg', 'PLAYER', 'LURKER'),
-             ('Rez', 'rez@clutch.gg', 'PLAYER', 'SUPPORT'),
-             ('hypex', 'hypex@clutch.gg', 'PLAYER', 'AWP'),
-             ('Snax', 'snax@clutch.gg', 'PLAYER', 'IGL')) AS u(nickname, email, system_role_ident, team_role_ident)
-         JOIN system_roles sr ON sr.ident = u.system_role_ident
-         JOIN team_roles tr ON tr.ident = u.team_role_ident;
+INSERT INTO users (nickname, email, password, system_role_id, team_role_id, team_id)
+VALUES ('PRa',
+        'pra@clutch.gg',
+        '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
+        (SELECT id FROM system_roles WHERE ident = 'PLAYER'),
+        (SELECT id FROM team_roles WHERE ident = 'ENTRY'),
+        (SELECT id FROM teams WHERE tag = 'RVLS')),
+       ('Tauson',
+        'tauson@clutch.gg',
+        '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
+        (SELECT id FROM system_roles WHERE ident = 'PLAYER'),
+        (SELECT id FROM team_roles WHERE ident = 'LURKER'),
+        (SELECT id FROM teams WHERE tag = 'RVLS')),
+       ('Rez',
+        'rez@clutch.gg',
+        '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
+        (SELECT id FROM system_roles WHERE ident = 'PLAYER'),
+        (SELECT id FROM team_roles WHERE ident = 'SUPPORT'),
+        (SELECT id FROM teams WHERE tag = 'RVLS')),
+       ('hypex',
+        'hypex@clutch.gg',
+        '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
+        (SELECT id FROM system_roles WHERE ident = 'PLAYER'),
+        (SELECT id FROM team_roles WHERE ident = 'AWP'),
+        (SELECT id FROM teams WHERE tag = 'RVLS')),
+       ('Snax',
+        'snax@clutch.gg',
+        '$2y$12$4xt6PUyyNVPfOqTfoivHy.DKVh4gZagDXDL2ZTk1x8IYSzhaJDt2y',
+        (SELECT id FROM system_roles WHERE ident = 'PLAYER'),
+        (SELECT id FROM team_roles WHERE ident = 'IGL'),
+        (SELECT id FROM teams WHERE tag = 'RVLS'));
