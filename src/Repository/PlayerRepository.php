@@ -30,7 +30,6 @@ final class PlayerRepository
     {
         [$conditions, $params] = $this->buildConditions($filters);
 
-        error_log($conditions);
         $stmt = $this->pdo->prepare("
             SELECT
                 u.id,
@@ -38,6 +37,7 @@ final class PlayerRepository
                 u.email,
                 sr.ident AS system_role_ident,
                 tr.ident AS team_role_ident,
+                u.team_id,
                 u.is_active
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
@@ -76,6 +76,7 @@ final class PlayerRepository
                 u.email,
                 sr.ident AS system_role_ident,
                 tr.ident AS team_role_ident,
+                u.team_id,
                 u.is_active
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
@@ -119,6 +120,46 @@ final class PlayerRepository
 
         return (int)$stmt->fetchColumn();
     }
+
+    /**
+     * Returns players available to be added to a team.
+     *
+     * For ADMIN: all players without any team (team_id IS NULL).
+     * For COACH: all players without any team, regardless of which team the coach manages
+     *            (the team itself is enforced at the service layer).
+     *
+     * Always excludes soft-deleted and inactive players.
+     *
+     * @return Player[]
+     */
+    public function findAvailable(): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT
+                u.id,
+                u.nickname,
+                u.email,
+                sr.ident AS system_role_ident,
+                tr.ident AS team_role_ident,
+                u.team_id,
+                u.is_active
+            FROM users u
+            JOIN system_roles sr ON sr.id = u.system_role_id
+            LEFT JOIN team_roles tr ON tr.id = u.team_role_id
+            WHERE sr.ident = :player_role
+              AND u.team_id IS NULL
+              AND u.deleted_at IS NULL
+              AND u.is_active = true
+            ORDER BY u.nickname ASC
+        ");
+        $stmt->execute(['player_role' => SystemRole::Player->value]);
+
+        return array_map(
+            fn(array $row) => Player::fromRow($row),
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
+    }
+
     /**
      * UPDATE
      */
@@ -129,10 +170,10 @@ final class PlayerRepository
      *
      * @param array{nickname?: string, team_role_id?: int|null} $data
      */
-    public function update(int $id, array $data): bool
+    public function update(int $id, int $systemRoleId, array $data): bool
     {
         $sets = [];
-        $params = [':id' => $id];
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
 
         if (array_key_exists('nickname', $data)) {
             $sets[] = 'nickname = :nickname';
@@ -148,7 +189,11 @@ final class PlayerRepository
             return false;
         }
 
-        $sql = 'UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = :id';
+        $sql = "UPDATE users
+                SET " . implode(', ', $sets) . "
+                WHERE id = :id
+                AND system_role_id = :system_role_id
+                AND deleted_at IS NULL";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
@@ -166,6 +211,7 @@ final class PlayerRepository
             SET is_active = false
             WHERE id = :id
                 AND system_role_id = :system_role_id
+                AND deleted_at IS NULL
         ");
 
         $params = [':id' => $id, ':system_role_id' => $systemRoleId];
@@ -185,6 +231,47 @@ final class PlayerRepository
             SET is_active = true
             WHERE id = :id
                 AND system_role_id = :system_role_id
+                AND deleted_at IS NULL
+        ");
+
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+
+        $stmt->execute($params);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Assigns a player to a team by setting users.team_id.
+     */
+    public function assignToTeam(int $playerId, int $teamId, int $systemRoleId): bool
+    {
+        $stmt = $this->pdo->prepare("
+           UPDATE users
+           SET team_id = :team_id
+           WHERE id = :id
+           AND system_role_id = :system_role_id
+           AND deleted_at IS NULL
+        ");
+
+        $params = [':id' => $playerId, ':team_id' => $teamId, ':system_role_id' => $systemRoleId];
+
+        $stmt->execute($params);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Removes a player from their team by setting users.team_id to NULL.
+     */
+    public function removeFromTeam(int $id, int $systemRoleId): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE users
+            SET team_id = NULL
+            WHERE id = :id
+            AND system_role_id = :system_role_id
+            AND deleted_at IS NULL
         ");
 
         $params = [':id' => $id, ':system_role_id' => $systemRoleId];

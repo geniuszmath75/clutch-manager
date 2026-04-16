@@ -82,6 +82,22 @@ final class PlayerController
         }
     }
 
+    public function getAvailablePlayers(): void
+    {
+        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
+
+        try {
+            $players = $this->playerService->getAvailable();
+
+            Response::json([
+                'success' => true,
+                'data' => $players,
+            ]);
+        } catch (InvalidArgumentException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
     /**
      * PUT /players/{id}
      */
@@ -169,6 +185,61 @@ final class PlayerController
                 'message' => 'Player deleted successfully.'
             ]);
         } catch (RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /players/{id}/team
+     */
+    public function addPlayerToTeam(string $id): void
+    {
+        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
+        $id = intval($id);
+
+        $data = $this->parseJsonBody();
+
+        if ($data === null || !isset($data['team_id'])) {
+            $this->handleError(400, 'Missing required field: team_id');
+            return;
+        }
+
+        $teamId = intval($data['team_id']);
+
+        if ($teamId <= 0) {
+            $this->handleError(400, 'Invalid team_id');
+            return;
+        }
+
+        try {
+            $this->playerService->assignToTeam($id, $teamId, Auth::systemRole(), Auth::teamId());
+
+            Response::json([
+                'success' => true,
+                'message' => 'Player assigned to team successfully.'
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /players/{id}/team
+     */
+    public function removePlayerFromTeam(string $id): void
+    {
+        Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
+
+        $id = intval($id);
+
+        try {
+            $this->playerService->removeFromTeam($id, Auth::systemRole(), Auth::teamId());
+
+            Response::json([
+                'success' => true,
+                'message' => 'Player removed from team successfully.'
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
     }

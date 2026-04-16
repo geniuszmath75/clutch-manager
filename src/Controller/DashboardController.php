@@ -5,9 +5,18 @@ namespace Src\Controller;
 use Core\Auth;
 use Core\Response;
 use Src\Enum\SystemRole;
+use Src\Repository\TeamRepository;
+use Src\Service\TeamService;
 
 final class DashboardController
 {
+    private TeamService $teamService;
+
+    public function __construct()
+    {
+        $teamRepository = new TeamRepository();
+        $this->teamService = new TeamService($teamRepository);
+    }
     /**
      * GET /
      * GET /dashboard
@@ -26,6 +35,15 @@ final class DashboardController
     {
         Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value, SystemRole::Player->value]);
 
-        Response::view('players.php');
+        $teams = [];
+        $sessionRole = Auth::systemRole();
+
+        if ($sessionRole === SystemRole::Admin->value) {
+            $teams = $this->teamService->getAll();
+        }
+
+        Response::view('players.php', [
+            'teams' => $teams
+        ]);
     }
 }

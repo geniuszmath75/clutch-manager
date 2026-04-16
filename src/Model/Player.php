@@ -9,7 +9,8 @@ final class Player
         public readonly string  $nickname,
         public readonly string  $email,
         public readonly ?string $teamRoleIdent,
-        public readonly bool    $isActive
+        public readonly bool $isActive,
+        public readonly ?int $teamId
     )
     {
     }
@@ -26,6 +27,7 @@ final class Player
             email: $row['email'],
             teamRoleIdent: $row['team_role_ident'] ?? null,
             isActive: (bool)$row['is_active'] ?? true,
+            teamId: isset($row['team_id']) ? (int)$row['team_id'] : null
         );
     }
 }
