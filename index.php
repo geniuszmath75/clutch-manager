@@ -65,6 +65,9 @@ $router->get('/dashboard/players', [Src\Controller\DashboardController::class, '
 
 // --- Players ---
 $router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);
+$router->get('/players/available', [Src\Controller\PlayerController::class, 'getAvailablePlayers']);
+$router->post('/players/{id}/team', [Src\Controller\PlayerController::class, 'addPlayerToTeam']);
+$router->delete('/players/{id}/team', [Src\Controller\PlayerController::class, 'removePlayerFromTeam']);
 $router->put('/players/{id}', [Src\Controller\PlayerController::class, 'updatePlayer']);
 $router->patch('/players/{id}/deactivate', [Src\Controller\PlayerController::class, 'deactivatePlayer']);
 $router->patch('/players/{id}/activate', [Src\Controller\PlayerController::class, 'activatePlayer']);

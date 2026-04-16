@@ -6,6 +6,7 @@ interface Player {
     nickname: string;
     email: string;
     teamRoleIdent: string | null;
+    teamId: number | null,
     isActive: boolean;
 }
 
@@ -34,11 +35,13 @@ const isAdmin = userRole === 'ADMIN';
 
 const canEdit = isAdmin;
 const canManageActivity = isAdmin || isCoach;
+const canManageTeam = isAdmin || isCoach;
 
 /**
  * Module state
  */
 let currentPlayers: Player[] = [];
+let availablePlayers: Player[] = [];
 let editingPlayerId: number | null = null;
 let currentPage = 1;
 let currentMeta: PaginationMeta | null = null;
@@ -53,31 +56,47 @@ const listEl = document.getElementById('players-list')!;
 const tbodyEl = document.getElementById('players-tbody')!;
 const roleFilterEl = document.getElementById('role-filter') as HTMLSelectElement;
 const statusFilterEl = document.getElementById('status-filter') as HTMLSelectElement;
-const modal = document.getElementById('modal-edit-player') as HTMLDialogElement;
-const formEdit = document.getElementById('form-edit-player') as HTMLFormElement;
-const inputNick = document.getElementById('edit-nickname') as HTMLInputElement;
-const selectRole = document.getElementById('edit-team-role') as HTMLSelectElement;
-const btnCancel = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
-const editError = document.getElementById('edit-error')!;
 const paginationEl = document.getElementById('pagination')!;
 const paginInfo = document.getElementById('pagination-info')!;
 const btnPrev = document.getElementById('btn-prev')! as HTMLButtonElement;
 const btnNext = document.getElementById('btn-next')! as HTMLButtonElement;
 const btnAdd = document.getElementById('btn-add-player') as HTMLButtonElement;
-const pageTitle = document.getElementById('page-title')!;
+
+// Edit modal
+const modalEdit = document.getElementById('modal-edit-player') as HTMLDialogElement;
+const formEdit = document.getElementById('form-edit-player') as HTMLFormElement;
+const inputNick = document.getElementById('edit-nickname') as HTMLInputElement;
+const selectRole = document.getElementById('edit-team-role') as HTMLSelectElement;
+const btnCancelEdit = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
+const editError = document.getElementById('edit-error')!;
+
+// Add-to-team modal
+const modalAddPlayerToTeam = document.getElementById('modal-add-player') as HTMLDialogElement;
+const selectAvailable = document.getElementById('add-player-select') as HTMLSelectElement;
+const selectTeam = document.getElementById('add-team-select') as HTMLSelectElement;
+const teamSelectWrapper = document.getElementById('team-select-wrapper')!;
+const btnCancelAdd = document.getElementById('btn-cancel-add') as HTMLButtonElement;
+const btnConfirmAdd = document.getElementById('btn-confirm-add') as HTMLButtonElement;
+const addError = document.getElementById('add-error')!;
 
 function initUI() {
     if (isPlayer) return;
 
-    if (canManageActivity) {
+    if (canManageTeam) {
         btnAdd.hidden = false;
     }
+
+    // Team selector in modal only visible for ADMIN
+    teamSelectWrapper.hidden = !isAdmin;
 }
 
+/**
+ * API — players list
+ */
 async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFilter: string = ''): Promise<void> {
     showLoading();
 
-    let filters: string = "";
+    let filters = "";
 
     if (roleFilter) {
         filters += `&role=${encodeURIComponent(roleFilter)}`;
@@ -113,6 +132,49 @@ async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFil
     }
 }
 
+/**
+ * API — team management
+ */
+
+async function fetchAvailablePlayers(): Promise<void> {
+    const res = await fetch('/players/available', {headers: {'Accept': 'application/json'}});
+    const json: ApiResponse<Player[]> = await res.json();
+
+    if (!res.ok || !json.success) {
+        throw new Error(json.errorMessage ?? 'Failed to fetch available players.');
+    }
+
+    availablePlayers = json.data ?? [];
+}
+
+async function addPlayerToTeam(playerId: number, teamId: number): Promise<void> {
+    const res = await fetch(`/players/${playerId}/team`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: JSON.stringify({team_id: teamId}),
+    });
+    const json: ApiResponse<never> = await res.json();
+
+    if (!res.ok || !json.success) {
+        throw new Error(json.errorMessage ?? 'Failed to assign player to team.');
+    }
+}
+
+async function removePlayerFromTeam(playerId: number): Promise<void> {
+    const res = await fetch(`/players/${playerId}/team`, {
+        method: 'DELETE',
+        headers: {'Accept': 'application/json'},
+    });
+    const json: ApiResponse<never> = await res.json();
+
+    if (!res.ok || !json.success) {
+        throw new Error(json.errorMessage ?? 'Failed to assign player to team.');
+    }
+}
+
+/**
+ * API — player CRUD
+ */
 async function updatePlayer(id: number, data: Partial<Pick<Player, 'nickname' | 'teamRoleIdent'>>): Promise<Player> {
     const payload: Record<string, unknown> = {};
     if (data.nickname !== undefined) payload['nickname'] = data.nickname;
@@ -176,7 +238,8 @@ function renderTable(players: Player[]): void {
     tbodyEl.innerHTML = '';
 
     if (players.length === 0) {
-        tbodyEl.innerHTML = '<tr><td colspan="4">No users found.</td></tr>';
+        const colspan = isPlayer ? 3 : 4;
+        tbodyEl.innerHTML = `<tr><td colspan="${colspan}">No players found.</td></tr>`;
         showList();
         return;
     }
@@ -186,7 +249,6 @@ function renderTable(players: Player[]): void {
         tr.dataset['id'] = String(player.id);
 
         const statusLabel = player.isActive ? 'Active' : 'Inactive';
-        let actionsHtml: string;
 
         if (isPlayer) {
             tr.innerHTML = `
@@ -199,20 +261,24 @@ function renderTable(players: Player[]): void {
         }
 
         const editBtn = canEdit
-            ? `<button class="btn-edit" data-id="${player.id}">Edit player</button>`
+            ? `<button class="btn-edit" data-id="${player.id}">Edit</button>`
             : '';
 
         const toggleBtn = canManageActivity
             ? player.isActive
-                ? `<button class="btn-deactivate" data-id="${player.id}">Deactivate player</button>`
-                : `<button class="btn-activate"   data-id="${player.id}">Activate player</button>`
+                ? `<button class="btn-deactivate" data-id="${player.id}">Deactivate</button>`
+                : `<button class="btn-activate"   data-id="${player.id}">Activate</button>`
+            : '';
+
+        const removeTeamBtn = canManageTeam && player.teamId !== null
+            ? `<button class="btn-remove-team" data-id="${player.id}">Remove from team</button>`
             : '';
 
         const deleteBtn = canEdit
-            ? `<button class="btn-delete" data-id="${player.id}">Delete player</button>`
+            ? `<button class="btn-delete" data-id="${player.id}">Delete</button>`
             : '';
 
-        actionsHtml = `${editBtn}${toggleBtn}${deleteBtn}` || '-';
+        const actionsHtml = `${editBtn}${toggleBtn}${removeTeamBtn}${deleteBtn}` || '-';
 
         tr.innerHTML = `
             <td>${escapeHtml(player.nickname)}</td>
@@ -227,6 +293,9 @@ function renderTable(players: Player[]): void {
     showList();
 }
 
+/**
+ * Render - pagination
+ */
 function renderPagination(meta: PaginationMeta | null): void {
     if (meta === null) {
         paginationEl.hidden = true;
@@ -240,7 +309,7 @@ function renderPagination(meta: PaginationMeta | null): void {
 }
 
 /**
- * Modal
+ * Modal - edit player (ADMIN only)
  */
 function openEditModal(player: Player): void {
     editingPlayerId = player.id;
@@ -248,39 +317,73 @@ function openEditModal(player: Player): void {
     selectRole.value = player.teamRoleIdent ?? '';
     editError.hidden = true;
     editError.textContent = '';
-    modal.showModal();
+    modalEdit.showModal();
 }
 
-function closeModal(): void {
-    modal.close();
+function closeEditModal(): void {
+    modalEdit.close();
     editingPlayerId = null;
+}
+
+/**
+ * Modal - add player to team (ADMIN, COACH)
+ */
+
+async function openAddPlayerToTeamModal(): Promise<void> {
+    addError.hidden = true;
+    addError.textContent = '';
+    selectAvailable.innerHTML = '<option value="">Loading...</option>';
+    btnConfirmAdd.disabled = true;
+    modalAddPlayerToTeam.showModal();
+
+    try {
+        await fetchAvailablePlayers();
+
+        selectAvailable.innerHTML = availablePlayers.length > 0
+            ? availablePlayers.map(p => `<option value="${p.id}">${escapeHtml(p.nickname)}</option>`).join('')
+            : '<option value="" disabled>No available players</option>';
+
+        btnConfirmAdd.disabled = availablePlayers.length === 0;
+    } catch (err: unknown) {
+        addError.textContent = err instanceof Error ? err.message : 'Failed to load players.';
+        addError.hidden = false;
+        btnConfirmAdd.disabled = true;
+    }
+}
+
+function closeAddPlayerToTeamModal(): void {
+    modalAddPlayerToTeam.close();
 }
 
 /**
  * Event listeners
  */
-roleFilterEl.addEventListener('change', () => {
+roleFilterEl.addEventListener('change', async () => {
     currentPage = 1;
-    fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+    await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
 })
 
-statusFilterEl.addEventListener('change', () => {
+statusFilterEl.addEventListener('change', async () => {
     currentPage = 1;
-    fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+    await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
 })
 
 // Pagination
-btnPrev.addEventListener('click', () => {
+btnPrev.addEventListener('click', async () => {
     if (currentPage > 1) {
-        fetchPlayers(currentPage - 1, roleFilterEl.value, statusFilterEl.value);
+        await fetchPlayers(currentPage - 1, roleFilterEl.value, statusFilterEl.value);
     }
 });
 
-btnNext.addEventListener('click', () => {
+btnNext.addEventListener('click', async () => {
     if (currentMeta && currentPage < currentMeta.totalPages) {
-        fetchPlayers(currentPage + 1, roleFilterEl.value, statusFilterEl.value);
+        await fetchPlayers(currentPage + 1, roleFilterEl.value, statusFilterEl.value);
     }
 });
+
+btnAdd.addEventListener('click', async () => {
+    await openAddPlayerToTeamModal();
+})
 
 tbodyEl.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
@@ -290,6 +393,7 @@ tbodyEl.addEventListener('click', (e: Event) => {
     if (target.classList.contains('btn-edit')) {
         const player = currentPlayers.find(p => p.id === id);
         if (player) openEditModal(player);
+        return;
     }
 
     if (target.classList.contains('btn-activate')) {
@@ -298,6 +402,7 @@ tbodyEl.addEventListener('click', (e: Event) => {
         setPlayerActivity(id, true)
             .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+        return;
     }
 
     if (target.classList.contains('btn-deactivate')) {
@@ -306,6 +411,16 @@ tbodyEl.addEventListener('click', (e: Event) => {
         setPlayerActivity(id, false)
             .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
             .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+        return;
+    }
+
+    if (target.classList.contains('btn-remove-team')) {
+        if (!confirm(`Remove player #${id} from their team?`)) return;
+
+        removePlayerFromTeam(id)
+            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
+            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+        return;
     }
 
     if (target.classList.contains('btn-delete')) {
@@ -317,7 +432,8 @@ tbodyEl.addEventListener('click', (e: Event) => {
     }
 });
 
-btnCancel.addEventListener('click', closeModal);
+// Edit modal events
+btnCancelEdit.addEventListener('click', closeEditModal);
 
 formEdit.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
@@ -333,13 +449,44 @@ formEdit.addEventListener('submit', async (e: Event) => {
             teamRoleIdent: selectRole.value || null,
         });
 
-        closeModal();
+        closeEditModal();
         await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
     } catch (err: unknown) {
         editError.textContent = err instanceof Error ? err.message : 'An error occurred';
         editError.hidden = false;
     } finally {
         btnSave.disabled = false;
+    }
+});
+
+// Add-to-team modal events
+btnCancelAdd.addEventListener('click', closeAddPlayerToTeamModal);
+
+btnConfirmAdd.addEventListener('click', async () => {
+    const playerId = Number(selectAvailable.value);
+
+    // COACH — team_id comes from session (enforced on backend); ADMIN picks from selector
+    const teamId = isAdmin
+        ? Number(selectTeam.value)
+        : Number(document.body.dataset['teamId'] ?? 0);
+
+    if (!playerId || !teamId) {
+        addError.textContent = 'Please select a player and a team.';
+        addError.hidden = false;
+        return;
+    }
+
+    btnConfirmAdd.disabled = true;
+    addError.hidden = true;
+
+    try {
+        await addPlayerToTeam(playerId, teamId);
+        closeAddPlayerToTeamModal();
+        await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+    } catch (err: unknown) {
+        addError.textContent = err instanceof Error ? err.message : 'An error occurred';
+        addError.hidden = false;
+        btnConfirmAdd.disabled = false;
     }
 });
 

@@ -1,4 +1,7 @@
-<?php $role = $_SESSION['user']['system_role'] ?? ''; ?>
+<?php
+$role = $_SESSION['user']['system_role'] ?? '';
+$teamId = $_SESSION['user']['team_id'] ?? null;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +9,8 @@
     <meta name="viewport" content="width=device-width" initial-scale=1>
     <title>Players</title>
 </head>
-<body data-role="<?= htmlspecialchars($role) ?>">
+<body data-role="<?= htmlspecialchars($role) ?>"
+      data-team-id="<?= !empty($teamId) ? htmlspecialchars((string)$teamId) : '' ?>">
 <nav>
     <a href="/dashboard">Dashboard</a>
     <a href="/dashboard/players" aria-current="page">Players</a>
@@ -34,18 +38,14 @@
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
             </select>
-            <!-- Przycisk dodawania — widoczny tylko dla ADMIN/COACH (obsługa przez TS) -->
+            <!-- Visible for ADMIN and COACH only (controlled by players.ts) -->
             <button id="btn-add-player" hidden>+ Add player to team</button>
         </div>
     </header>
 
-    <!-- Stan ładowania -->
     <div id="players-loading" aria-live="polite">Players loading...</div>
-
-    <!-- Stan błędu -->
     <div id="players-error" hidden role="alert"></div>
 
-    <!-- Lista graczy -->
     <div id="players-list" hidden>
         <table>
             <thead>
@@ -56,20 +56,17 @@
                 <th scope="col" class="actions-col">Actions</th>
             </tr>
             </thead>
-            <tbody id="players-tbody">
-            <!-- Wypełniany przez players.ts -->
-            </tbody>
+            <tbody id="players-tbody"></tbody>
         </table>
 
-        <!-- Paginacja — widoczna tylko gdy totalPages > 1 -->
         <nav id="pagination" aria-label="Player pagination" hidden>
-            <button id="btn-prev" aria-label="Previous page">‹</button>
+            <button id="btn-prev" aria-label="Previous page">PREV</button>
             <span id="pagination-info"></span>
-            <button id="btn-next" aria-label="Next page">›</button>
+            <button id="btn-next" aria-label="Next page">NEXT</button>
         </nav>
     </div>
 
-    <!-- Modal: edycja gracza (placeholder — wypełniany przez players.ts) -->
+    <!-- Modal: edit player (ADMIN only) -->
     <dialog id="modal-edit-player" aria-labelledby="modal-edit-title">
         <h2 id="modal-edit-title">Edit player</h2>
         <form id="form-edit-player" method="dialog">
@@ -93,6 +90,39 @@
             </div>
             <p id="edit-error" role="alert" hidden></p>
         </form>
+    </dialog>
+
+    <dialog id="modal-add-player" aria-labelledby="modal-edit-title">
+        <h2 id="modal-add-title">Add player to team</h2>
+
+        <label for="add-player-select">Player</label>
+        <select id="add-player-select">
+            <option value="">Loading...</option>
+        </select>
+
+        <!-- Team selector — visible for ADMIN only; COACH uses their own team_id -->
+        <div id="team-select-wrapper">
+            <label for="add-team-select">Team</label>
+            <select id="add-team-select">
+                <?php
+                if (!empty($teams)) {
+                    foreach ($teams as $team) {
+                        printf(
+                                '<option value="%d">%s</option>',
+                                htmlspecialchars((string)$team->id),
+                                htmlspecialchars($team->name)
+                        );
+                    }
+                }
+                ?>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" id="btn-confirm-add">Add to team</button>
+            <button type="button" id="btn-cancel-add">Cancel</button>
+        </div>
+        <p id="add-error" role="alert" hidden></p>
     </dialog>
 </main>
 
