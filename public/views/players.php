@@ -14,6 +14,7 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
 <nav>
     <a href="/dashboard">Dashboard</a>
     <a href="/dashboard/players" aria-current="page">Players</a>
+    <a href="/dashboard/matches">Matches</a>
     <form method="POST" action="/auth/logout" style="display:inline">
         <button type="submit">Log out</button>
     </form>
@@ -126,6 +127,6 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
     </dialog>
 </main>
 
-<script src="/public/assets/js/players.js"></script>
+<script type="module" src="/public/assets/js/players.js"></script>
 </body>
 </html>

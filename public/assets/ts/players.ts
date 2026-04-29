@@ -1,3 +1,5 @@
+export {};
+
 /**
  * Types
  */
@@ -521,4 +523,4 @@ function escapeHtml(str: string): string {
 }
 
 initUI();
-fetchPlayers();
+await fetchPlayers();
