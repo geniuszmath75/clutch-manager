@@ -62,6 +62,8 @@ $router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser
 $router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard/players', [Src\Controller\DashboardController::class, 'showPlayersView']);
+$router->get('/dashboard/matches', [Src\Controller\DashboardController::class, 'showMatchesView']);
+$router->get('/dashboard/matches/{id}', [Src\Controller\DashboardController::class, 'showMatchDetailsView']);
 
 // --- Players ---
 $router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);
@@ -72,6 +74,19 @@ $router->put('/players/{id}', [Src\Controller\PlayerController::class, 'updatePl
 $router->patch('/players/{id}/deactivate', [Src\Controller\PlayerController::class, 'deactivatePlayer']);
 $router->patch('/players/{id}/activate', [Src\Controller\PlayerController::class, 'activatePlayer']);
 $router->delete('/players/{id}', [Src\Controller\PlayerController::class, 'deletePlayer']);
+
+// --- Matches ---
+$router->get('/matches', [Src\Controller\GameMatchController::class, "getMatches"]);
+$router->get('/matches/{id}', [Src\Controller\GameMatchController::class, "getMatchDetails"]);
+$router->post('/matches', [Src\Controller\GameMatchController::class, "createMatch"]);
+$router->put('/matches/{id}', [Src\Controller\GameMatchController::class, "updateMatch"]);
+$router->delete('/matches/{id}', [Src\Controller\GameMatchController::class, "deleteMatch"]);
+
+// --- Game maps ---
+$router->get('/game-maps', [Src\Controller\GameMapController::class, "getGameMaps"]);
+
+// --- Game modes ---
+$router->get('/game-modes', [Src\Controller\GameModeController::class, "getGameModes"]);
 
 // 7. Dispatch
 

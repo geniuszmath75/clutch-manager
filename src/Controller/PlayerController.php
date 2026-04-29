@@ -54,6 +54,7 @@ final class PlayerController
 
             $roleFilter = isset($_GET['role']) ? strtoupper(trim($_GET['role'])) : null;
             $statusFilter = $_GET['is_active'] ?? null;
+            $teamIdFilter = $_GET['team_id'] ?? null;
 
             if (!empty($roleFilter)) {
                 $filters['team_role_ident'] = $roleFilter;
@@ -61,9 +62,12 @@ final class PlayerController
             if (!empty($statusFilter)) {
                 $filters['is_active'] = $statusFilter;
             }
+            if (!empty($teamIdFilter)) {
+                $filters['team_id'] = $teamIdFilter;
+            }
 
-            $page = max(1, intval($_GET['page']));
-            $pageSize = min(50, intval($_GET['pageSize']));
+            $page = max(1, intval($_GET['page'] ?? 1));
+            $pageSize = min(50, intval($_GET['pageSize'] ?? 5));
 
             $result = $this->playerService->getAll($filters, $page, $pageSize);
 

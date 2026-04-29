@@ -343,17 +343,17 @@ final class PlayerRepository
 
         if (isset($filters['team_role_ident'])) {
             $conditions .= ' AND tr.ident = :team_role_ident';
-            $params['team_role_ident'] = $filters['team_role_ident'];
+            $params[':team_role_ident'] = $filters['team_role_ident'];
         }
 
         if (isset($filters['team_id'])) {
             $conditions .= ' AND u.team_id = :team_id';
-            $params['team_id'] = $filters['team_id'];
+            $params[':team_id'] = $filters['team_id'];
         }
 
         if (isset($filters['is_active'])) {
             $conditions .= ' AND u.is_active = :is_active';
-            $params['is_active'] = $filters['is_active'];
+            $params[':is_active'] = $filters['is_active'];
         }
 
         return [$conditions, $params];
