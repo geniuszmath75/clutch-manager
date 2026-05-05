@@ -1,3 +1,7 @@
+import {apiFetch} from "./helpers/fetch-helpers.js";
+import type {PaginationMeta} from "./helpers/fetch-helpers.js";
+import {escapeHtml} from "./helpers/string-helpers.js";
+
 export {};
 
 /**
@@ -10,24 +14,6 @@ interface Player {
     teamRoleIdent: string | null;
     teamId: number | null,
     isActive: boolean;
-}
-
-interface PaginationMeta {
-    total: number,
-    page: number,
-    pageSize: number;
-    totalPages: number
-}
-
-interface ApiResponse<T> {
-    success: boolean;
-    data?: T;
-    statusCode?: number;
-    errorMessage?: string;
-}
-
-interface PaginatedApiResponse<T> extends ApiResponse<T> {
-    meta: PaginationMeta
 }
 
 const userRole = document.body.dataset['role'] ?? '';
@@ -112,19 +98,15 @@ async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFil
     const url: string = `/players?page=${page}&pageSize=${pageSize}${filters}`;
 
     try {
-        const res = await fetch(url, {
-            headers: {'Accept': 'application/json'}
-        });
+        const res = await apiFetch<Player[]>(url);
 
-        const json: PaginatedApiResponse<Player[]> = await res.json();
-
-        if (!res.ok || !json.success) {
-            showError(json.errorMessage ?? 'Fetching players error.');
+        if (!res.success) {
+            showError(res.errorMessage ?? 'Fetching players error.');
             return;
         }
 
-        currentPlayers = json.data ?? [];
-        currentMeta = json.meta ?? null;
+        currentPlayers = res.data ?? [];
+        currentMeta = res.meta ?? null;
         currentPage = page;
 
         renderTable(currentPlayers);
@@ -139,38 +121,33 @@ async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFil
  */
 
 async function fetchAvailablePlayers(): Promise<void> {
-    const res = await fetch('/players/available', {headers: {'Accept': 'application/json'}});
-    const json: ApiResponse<Player[]> = await res.json();
+    const res = await apiFetch<Player[]>('/players/available');
 
-    if (!res.ok || !json.success) {
-        throw new Error(json.errorMessage ?? 'Failed to fetch available players.');
+    if (!res.success) {
+        throw new Error(res.errorMessage ?? 'Failed to fetch available players.');
     }
 
-    availablePlayers = json.data ?? [];
+    availablePlayers = res.data ?? [];
 }
 
 async function addPlayerToTeam(playerId: number, teamId: number): Promise<void> {
-    const res = await fetch(`/players/${playerId}/team`, {
+    const res = await apiFetch<Player>(`/players/${playerId}/team`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
         body: JSON.stringify({team_id: teamId}),
     });
-    const json: ApiResponse<never> = await res.json();
 
-    if (!res.ok || !json.success) {
-        throw new Error(json.errorMessage ?? 'Failed to assign player to team.');
+    if (!res.success) {
+        throw new Error(res.errorMessage ?? 'Failed to assign player to team.');
     }
 }
 
 async function removePlayerFromTeam(playerId: number): Promise<void> {
-    const res = await fetch(`/players/${playerId}/team`, {
+    const res = await apiFetch(`/players/${playerId}/team`, {
         method: 'DELETE',
-        headers: {'Accept': 'application/json'},
     });
-    const json: ApiResponse<never> = await res.json();
 
-    if (!res.ok || !json.success) {
-        throw new Error(json.errorMessage ?? 'Failed to assign player to team.');
+    if (!res.success) {
+        throw new Error(res.errorMessage ?? 'Failed to assign player to team.');
     }
 }
 
@@ -182,35 +159,27 @@ async function updatePlayer(id: number, data: Partial<Pick<Player, 'nickname' | 
     if (data.nickname !== undefined) payload['nickname'] = data.nickname;
     if (data.teamRoleIdent !== undefined) payload['team_role_ident'] = data.teamRoleIdent;
 
-    const res = await fetch(`/players/${id}`, {
+    const res = await apiFetch<Player>(`/players/${id}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
         body: JSON.stringify(payload),
     });
 
-    const json: ApiResponse<Player> = await res.json();
-
-    if (!res.ok || !json.success || !json.data) {
-        throw new Error(json.errorMessage ?? 'Failed to update player.');
+    if (!res.success || !res.data) {
+        throw new Error(res.errorMessage ?? 'Failed to update player.');
     }
 
-    return json.data;
+    return res.data;
 }
 
 async function setPlayerActivity(id: number, active: boolean): Promise<void> {
     try {
         const action = active ? 'activate' : 'deactivate';
-        const res = await fetch(`/players/${id}/${action}`, {
+        const res = await apiFetch(`/players/${id}/${action}`, {
             method: 'PATCH',
-            headers: {'Accept': 'application/json'},
         });
-        const json: ApiResponse<Player> = await res.json();
 
-        if (!res.ok || !json.success) {
-            showError(json.errorMessage ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
+        if (!res.success) {
+            showError(res.errorMessage ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
         }
     } catch {
         showError('Server connection error');
@@ -219,14 +188,12 @@ async function setPlayerActivity(id: number, active: boolean): Promise<void> {
 
 async function deletePlayer(id: number): Promise<void> {
     try {
-        const res = await fetch(`/players/${id}`, {
+        const res = await apiFetch(`/players/${id}`, {
             method: 'DELETE',
-            headers: {'Accept': 'application/json'},
         });
-        const json: ApiResponse<Player> = await res.json();
 
-        if (!res.ok || !json.success) {
-            showError(json.errorMessage ?? 'Failed to delete player.');
+        if (!res.success) {
+            showError(res.errorMessage ?? 'Failed to delete player.');
         }
     } catch {
         showError('Server connection error');
@@ -512,14 +479,6 @@ function showList(): void {
     loadingEl.hidden = true;
     errorEl.hidden = true;
     listEl.hidden = false;
-}
-
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 }
 
 initUI();

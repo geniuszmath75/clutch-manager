@@ -1,22 +1,12 @@
+import {apiFetch} from "./helpers/fetch-helpers.js";
+import {formatDate} from "./helpers/date-helpers.js";
+import {escapeHtml} from "./helpers/string-helpers.js";
+
 export {};
 
 /**
  * Types
  */
-interface PaginationMeta {
-    total: number,
-    page: number,
-    pageSize: number;
-    totalPages: number
-}
-
-interface ApiResponse<T> {
-    success: boolean;
-    statusCode?: number;
-    errorMessage?: string;
-    data?: T;
-    meta?: PaginationMeta;
-}
 
 interface GameMatch {
     id: number;
@@ -109,17 +99,6 @@ const editDuration = document.getElementById('edit-duration') as HTMLInputElemen
 const editPlayedAt = document.getElementById('edit-played-at') as HTMLInputElement;
 const editMapSelection = document.getElementById('edit-map') as HTMLSelectElement;
 const editGameModeSelection = document.getElementById('edit-game-mode') as HTMLSelectElement;
-
-/**
- * Fetch helpers
- */
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
-    const res = await fetch(url, {
-        headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
-        ...options,
-    });
-    return res.json() as Promise<ApiResponse<T>>;
-}
 
 /**
  * API - match details with players' stats
@@ -247,7 +226,7 @@ function renderHeader(m: GameMatch): void {
     metaGameMode.textContent = m.gameModeIdent;
 
     // Score headline: "TeamName  16 : 12  Opponent"
-    metaScore.textContent = `${m.teamScore} : ${m.opponentScore}  ${esc(m.opponentName)}`;
+    metaScore.textContent = `${m.teamScore} : ${m.opponentScore}  ${escapeHtml(m.opponentName)}`;
 
     // Map badge
     metaMap.textContent = m.mapIdent;
@@ -273,7 +252,7 @@ function renderStats(stats: PlayerStats[], m: GameMatch): void {
 
         return `
             <tr>
-                <td>${esc(s.playerNickname)}</td>
+                <td>${escapeHtml(s.playerNickname)}</td>
                 <td>${s.killsNumber} / ${s.deathsNumber} / ${s.assistsNumber}</td>
                 <td>${s.kd}</td>
                 <td class="${pmClass}">${pmPrefix}${s.plusMinus}</td>
@@ -289,7 +268,7 @@ function renderStats(stats: PlayerStats[], m: GameMatch): void {
 function renderEditStatsRows(stats: PlayerStats[], target: HTMLElement): void {
     target.innerHTML = stats.map(s => `
         <tr data-player-id="${s.playerId}">
-            <td>${esc(s.playerNickname)}</td>
+            <td>${escapeHtml(s.playerNickname)}</td>
             <td><input class="input input--sm" type="number" name="kills_number"         min="0" value="${s.killsNumber}"></td>
             <td><input class="input input--sm" type="number" name="deaths_number"        min="0" value="${s.deathsNumber}"></td>
             <td><input class="input input--sm" type="number" name="assists_number"       min="0" value="${s.assistsNumber}"></td>
@@ -327,12 +306,12 @@ async function openEditModal(): Promise<void> {
 
     // Populate map select
     editMapSelection.innerHTML = mapsCache.map(m =>
-        `<option value="${m.id}" ${m.id === currentMatch!.mapId ? 'selected' : ''}>${esc(m.ident)}</option>`
+        `<option value="${m.id}" ${m.id === currentMatch!.mapId ? 'selected' : ''}>${escapeHtml(m.ident)}</option>`
     ).join('');
 
     // Populate game mode select
     editGameModeSelection.innerHTML = modesCache.map(m =>
-        `<option value="${m.id}" ${m.id === currentMatch!.gameModeId ? 'selected' : ''}>${esc(m.ident)}</option>`
+        `<option value="${m.id}" ${m.id === currentMatch!.gameModeId ? 'selected' : ''}>${escapeHtml(m.ident)}</option>`
     ).join('');
 
     // Pre-fill stats rows
@@ -410,22 +389,6 @@ function hideError(el: HTMLElement): void {
 function showError(el: HTMLElement, msg: string): void {
     el.textContent = msg;
     el.hidden = false;
-}
-
-function esc(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function formatDate(iso: string): string {
-    const d = new Date(iso.replace(' ', 'T'));
-    return d.toLocaleString('en-US', {
-        month: 'long', day: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: false,
-    });
 }
 
 /**

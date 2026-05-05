@@ -1,23 +1,13 @@
+import {apiFetch} from "./helpers/fetch-helpers.js";
+import type {PaginationMeta} from "./helpers/fetch-helpers.js";
+import {formatDate} from "./helpers/date-helpers.js";
+import {escapeHtml} from "./helpers/string-helpers.js";
+
 export {};
 
 /**
  * Types
  */
-interface PaginationMeta {
-    total: number,
-    page: number,
-    pageSize: number;
-    totalPages: number
-}
-
-interface ApiResponse<T> {
-    success: boolean;
-    data?: T;
-    statusCode?: number;
-    errorMessage?: string;
-    meta?: PaginationMeta;
-}
-
 interface GameMatch {
     id: number;
     teamId: number;
@@ -97,17 +87,6 @@ const matchMap = document.getElementById('match-map') as HTMLSelectElement;
 const matchDuration = document.getElementById('match-duration') as HTMLInputElement;
 const matchPlayedAt = document.getElementById('match-played-at') as HTMLInputElement;
 const matchGameMode = document.getElementById('match-game-mode') as HTMLSelectElement;
-
-/**
- * Fetch helpers
- */
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
-    const res = await fetch(url, {
-        headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
-        ...options,
-    });
-    return res.json() as Promise<ApiResponse<T>>;
-}
 
 /**
  * API - matches list
@@ -273,8 +252,8 @@ function renderTable(matches: GameMatch[]): void {
         return `
             <tr>
                 <td>${m.id}</td>
-                <td>${esc(m.opponentName)}</td>
-                <td>${esc(m.mapIdent)}</td>
+                <td>${escapeHtml(m.opponentName)}</td>
+                <td>${escapeHtml(m.mapIdent)}</td>
                 <td>${m.teamScore} : ${m.opponentScore}</td>
                 <td><span class="${resultClass}">${m.result}</span></td>
                 <td>${date}</td>
@@ -305,7 +284,7 @@ function renderPagination(meta: PaginationMeta | null): void {
 function renderStatsRows(players: Player[], target: HTMLElement): void {
     target.innerHTML = players.map((p, i) => `
         <tr data-player-id="${p.id}">
-            <td>${esc(p.nickname)}</td>
+            <td>${escapeHtml(p.nickname)}</td>
             <td><input class="input input--sm" type="number" name="kills_number"         data-i="${i}" min="0" value="0"></td>
             <td><input class="input input--sm" type="number" name="deaths_number"        data-i="${i}" min="0" value="0"></td>
             <td><input class="input input--sm" type="number" name="assists_number"       data-i="${i}" min="0" value="0"></td>
@@ -423,23 +402,6 @@ function showError(el: HTMLElement, msg: string): void {
 function hideError(el: HTMLElement): void {
     el.textContent = '';
     el.hidden = true;
-}
-
-function esc(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function formatDate(iso: string): string {
-    // ISO or 'YYYY-MM-DD HH:mm:ss' → 'Apr 24, 2026 20:50'
-    const d = new Date(iso.replace(' ', 'T'));
-    return d.toLocaleString('en-US', {
-        month: 'short', day: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: false,
-    });
 }
 
 /**
