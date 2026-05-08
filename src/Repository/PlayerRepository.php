@@ -161,6 +161,40 @@ final class PlayerRepository
     }
 
     /**
+     * Returns players assigned to selected team strategy
+     *
+     * @return array<array{id: int, nickname: string}>
+     */
+    public function findByStrategyIds(array $strategyIds): array
+    {
+        $placeholders = implode(', ', array_fill(0, count($strategyIds), '?'));
+
+        $stmt = $this->pdo->prepare("
+            SELECT 
+                u.id,
+                u.nickname,
+                tsp.team_strategy_id
+            FROM users u
+            JOIN system_roles sr ON sr.id = u.system_role_id
+            JOIN team_strategy_player tsp ON u.id = tsp.player_id
+            WHERE tsp.team_strategy_id IN ($placeholders)
+              AND sr.ident = ?
+              AND u.deleted_at IS NULL
+            ORDER BY u.nickname
+        ");
+        $stmt->execute([...$strategyIds, SystemRole::Player->value]);
+
+        $map = [];
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sid = (int)$row['team_strategy_id'];
+            $map[$sid][] = ['id' => (int)$row['id'], 'nickname' => (string)$row['nickname']];
+        }
+
+        return $map;
+    }
+
+    /**
      * UPDATE
      */
 
