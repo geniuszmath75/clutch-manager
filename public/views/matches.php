@@ -20,6 +20,7 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
         <a href="/dashboard">Dashboard</a>
         <a href="/dashboard/players">Players</a>
         <a href="/dashboard/matches" aria-current="page">Matches</a>
+        <a href="/dashboard/strategies">Strategies</a>
         <form method="POST" action="/auth/logout" style="display:inline">
             <button type="submit">Log out</button>
         </form>
