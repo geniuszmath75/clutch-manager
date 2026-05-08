@@ -7,6 +7,7 @@ use Core\Response;
 use Src\Enum\SystemRole;
 use Src\Repository\GameMapRepository;
 use Src\Repository\GameModeRepository;
+use Src\Repository\StrategyTypeRepository;
 use Src\Repository\TeamRepository;
 use Src\Service\TeamService;
 
@@ -16,12 +17,16 @@ final class DashboardController
     private GameMapRepository $mapRepository;
     private GameModeRepository $gameModeRepository;
 
+    private StrategyTypeRepository $strategyTypeRepository;
+
     public function __construct()
     {
         $teamRepository = new TeamRepository();
+
         $this->teamService = new TeamService($teamRepository);
         $this->mapRepository = new GameMapRepository();
         $this->gameModeRepository = new GameModeRepository();
+        $this->strategyTypeRepository = new StrategyTypeRepository();
     }
     /**
      * GET /
@@ -86,6 +91,35 @@ final class DashboardController
 
         Response::view("match-details.php", [
             'matchId' => $id
+        ]);
+    }
+
+    /**
+     * GET /dashboard/strategies
+     */
+    public function showStrategiesView(): void
+    {
+        Auth::requireLogin();
+
+        $maps = $this->mapRepository->findAll();
+        $strategyTypes = $this->strategyTypeRepository->findAll();
+
+        Response::view('strategies.php', [
+            'maps' => $maps,
+            'strategyTypes' => $strategyTypes
+        ]);
+    }
+
+    /**
+     * GET /dashboard/strategies/{id}
+     */
+    public function showStrategyDetailsView(string $id): void
+    {
+        Auth::requireLogin();
+        $id = intval($id);
+
+        Response::view("strategy-details.php", [
+            'strategyId' => $id
         ]);
     }
 }

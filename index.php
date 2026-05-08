@@ -64,6 +64,8 @@ $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDash
 $router->get('/dashboard/players', [Src\Controller\DashboardController::class, 'showPlayersView']);
 $router->get('/dashboard/matches', [Src\Controller\DashboardController::class, 'showMatchesView']);
 $router->get('/dashboard/matches/{id}', [Src\Controller\DashboardController::class, 'showMatchDetailsView']);
+$router->get('/dashboard/strategies', [Src\Controller\DashboardController::class, 'showStrategiesView']);
+$router->get('/dashboard/strategies/{id}', [Src\Controller\DashboardController::class, 'showStrategyDetailsView']);
 
 // --- Players ---
 $router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);
@@ -87,6 +89,19 @@ $router->get('/game-maps', [Src\Controller\GameMapController::class, "getGameMap
 
 // --- Game modes ---
 $router->get('/game-modes', [Src\Controller\GameModeController::class, "getGameModes"]);
+
+// --- Strategies ---
+$router->get('/strategies', [Src\Controller\StrategyController::class, "getStrategies"]);
+$router->get('/strategies/{id}', [Src\Controller\StrategyController::class, "getStrategyDetails"]);
+$router->post('/strategies', [Src\Controller\StrategyController::class, "createStrategy"]);
+$router->put('/strategies/{id}', [Src\Controller\StrategyController::class, "updateStrategy"]);
+$router->delete('/strategies/{id}', [Src\Controller\StrategyController::class, "deleteStrategy"]);
+
+// --- Strategy types ---
+$router->get('/strategy-types', [Src\Controller\StrategyTypeController::class, "getStrategyTypes"]);
+
+// --- Team ---
+$router->get('/teams', [Src\Controller\TeamController::class, "getTeams"]);
 
 // 7. Dispatch
 
