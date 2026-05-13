@@ -186,10 +186,10 @@ final class GameMatchRepository
             $stmt = $this->pdo->prepare("
                 INSERT INTO game_matches
                     (team_id, opponent_name, team_score, opponent_score,
-                     map_id, game_mode_id, duration, played_at)
+                     map_id, game_mode_id, duration, played_at, updated_by_user_id)
                 VALUES
                     (:team_id, :opponent_name, :team_score, :opponent_score,
-                     :map_id, :game_mode_id, :duration, :played_at)
+                     :map_id, :game_mode_id, :duration, :played_at, :updated_by_user_id)
                 RETURNING id");
 
             $stmt->execute([
@@ -201,6 +201,7 @@ final class GameMatchRepository
                 ':game_mode_id' => $matchData['game_mode_id'],
                 ':duration' => $matchData['duration'],
                 ':played_at' => $matchData['played_at'],
+                ':updated_by_user_id' => $matchData['updated_by_user_id'],
             ]);
 
             $matchId = (int)$stmt->fetchColumn();
@@ -226,7 +227,8 @@ final class GameMatchRepository
                     game_mode_id   = :game_mode_id,
                     duration       = :duration,
                     played_at      = :played_at,
-                    updated_at     = NOW()
+                    updated_at     = NOW(),
+                    updated_by_user_id = :updated_by_user_id
                 WHERE id = :id
                   AND deleted_at IS NULL
             ");
@@ -240,6 +242,7 @@ final class GameMatchRepository
                 ':duration' => $matchData['duration'],
                 ':played_at' => $matchData['played_at'],
                 ':id' => $id,
+                ':updated_by_user_id' => $matchData['updated_by_user_id'],
             ]);
 
             $this->updatePlayerStats($id, $statsRows);
@@ -251,16 +254,17 @@ final class GameMatchRepository
     /**
      * Soft-delete a match (cascades not needed; stats are scoped via match_id + deleted_at).
      */
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
             UPDATE game_matches
             SET deleted_at = NOW(),
-                updated_at = NOW()
+                updated_at = NOW(),
+                updated_by_user_id = :updated_by_user_id
             WHERE id = :id
               AND deleted_at IS NULL"
         );
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, 'updated_by_user_id' => $userId]);
 
         return $stmt->rowCount() === 1;
     }

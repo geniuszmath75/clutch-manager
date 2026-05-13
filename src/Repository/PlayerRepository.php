@@ -238,17 +238,18 @@ final class PlayerRepository
      * Deactivates a player - reversible (is_active = false).
      * The player cannot log in, but appears in the ADMIN/COACH results.
      */
-    public function deactivate(int $id, int $systemRoleId): bool
+    public function deactivate(int $id, int $systemRoleId, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
             UPDATE users
-            SET is_active = false
+            SET is_active = false,
+                updated_by_user_id = :updated_by_user_id
             WHERE id = :id
                 AND system_role_id = :system_role_id
                 AND deleted_at IS NULL
         ");
 
-        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId, ':updated_by_user_id' => $userId];
 
         $stmt->execute($params);
 
@@ -278,17 +279,18 @@ final class PlayerRepository
     /**
      * Assigns a player to a team by setting users.team_id.
      */
-    public function assignToTeam(int $playerId, int $teamId, int $systemRoleId): bool
+    public function assignToTeam(int $playerId, int $teamId, int $systemRoleId, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
            UPDATE users
-           SET team_id = :team_id
+           SET team_id = :team_id,
+               updated_by_user_id = :updated_by_user_id
            WHERE id = :id
            AND system_role_id = :system_role_id
            AND deleted_at IS NULL
         ");
 
-        $params = [':id' => $playerId, ':team_id' => $teamId, ':system_role_id' => $systemRoleId];
+        $params = [':id' => $playerId, ':team_id' => $teamId, ':system_role_id' => $systemRoleId, ':updated_by_user_id' => $userId];
 
         $stmt->execute($params);
 
@@ -343,17 +345,18 @@ final class PlayerRepository
      * Removes the player from all SELECT results.
      * ADMIN only.
      */
-    public function delete(int $id, int $systemRoleId): bool
+    public function delete(int $id, int $systemRoleId, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
            UPDATE users
-           SET deleted_at = NOW()
+           SET deleted_at = NOW(),
+               updated_by_user_id = :updated_by_user_id
            WHERE id = :id
                 AND deleted_at IS NULL
                 AND system_role_id = :system_role_id
         ");
 
-        $params = [':id' => $id, ':system_role_id' => $systemRoleId];
+        $params = [':id' => $id, ':system_role_id' => $systemRoleId, ':updated_by_user_id' => $userId];
 
         $stmt->execute($params);
 

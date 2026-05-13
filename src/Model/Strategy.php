@@ -16,10 +16,10 @@ final class Strategy
         public readonly int    $teamId,
         public readonly int    $mapId,
         public readonly int    $strategyTypeId,
-        /** @var array<array{id: int, nickname: string}> */
-        public readonly array  $players = [],
         public readonly string $createdAt,
         public readonly string $updatedAt,
+        /** @var array<array{id: int, nickname: string}> */
+        public readonly array $players = [],
     )
     {
     }
@@ -38,9 +38,9 @@ final class Strategy
             teamId: (int)$row['team_id'],
             mapId: (int)$row['map_id'],
             strategyTypeId: (int)$row['strategy_type_id'],
-            players: [],
             createdAt: (string)$row['created_at'],
-            updatedAt: (string)$row['updated_at']
+            updatedAt: (string)$row['updated_at'],
+            players: []
         );
     }
 }

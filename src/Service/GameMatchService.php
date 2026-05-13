@@ -125,8 +125,9 @@ final class GameMatchService
         }
 
         $this->assertTeamAccess($match->teamId);
+        $userId = Auth::userId();
 
-        $success = $this->matchRepository->delete($id);
+        $success = $this->matchRepository->delete($id, $userId);
 
         if (!$success) {
             throw new RuntimeException('Failed to delete match.', 500);
@@ -262,6 +263,7 @@ final class GameMatchService
             'game_mode_id' => $gameModeId,
             'duration' => $duration,
             'played_at' => $playedAt,
+            'updated_by_user_id' => Auth::userId(),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace Src\Service;
 
+use Core\Auth;
 use InvalidArgumentException;
 use RuntimeException;
 use Src\Enum\SystemRole;
@@ -154,7 +155,9 @@ final class PlayerService
             throw new RuntimeException('Player is no longer active', 409);
         }
 
-        $success = $this->playerRepository->deactivate($id, $systemRoleId);
+        $userId = Auth::userId();
+
+        $success = $this->playerRepository->deactivate($id, $systemRoleId, $userId);
 
         if (!$success) {
             throw new RuntimeException('Failed to deactivate player', 500);
@@ -204,7 +207,9 @@ final class PlayerService
             throw new InvalidArgumentException('Invalid system role', 400);
         }
 
-        $success = $this->playerRepository->delete($id, $systemRoleId);
+        $userId = Auth::userId();
+
+        $success = $this->playerRepository->delete($id, $systemRoleId, $userId);
 
         if (!$success) {
             throw new RuntimeException('Failed to delete player', 500);
@@ -240,7 +245,9 @@ final class PlayerService
             }
         }
 
-        $success = $this->playerRepository->assignToTeam($playerId, $teamId, $systemRoleId);
+        $userId = Auth::userId();
+
+        $success = $this->playerRepository->assignToTeam($playerId, $teamId, $systemRoleId, $userId);
 
         if (!$success) {
             throw new RuntimeException('Failed to assign a player to team', 500);

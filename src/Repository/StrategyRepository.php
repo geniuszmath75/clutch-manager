@@ -78,9 +78,9 @@ final class StrategyRepository
                 teamId: $strategy->teamId,
                 mapId: $strategy->mapId,
                 strategyTypeId: $strategy->strategyTypeId,
-                players: $playersMap[$strategy->id] ?? [],
                 createdAt: $strategy->createdAt,
                 updatedAt: $strategy->updatedAt,
+                players: $playersMap[$strategy->id] ?? []
             ),
             $strategies,
         );
@@ -138,7 +138,7 @@ final class StrategyRepository
         }
 
         $strategy = Strategy::fromRow($row);
-        $players = $this->playerRepository->findByStrategyIds([$id])[$id];
+        $players = $this->playerRepository->findByStrategyIds([$id])[$id] ?? [];
 
         // Attach players via constructor promotion — rebuild with players
         return new Strategy(
@@ -151,9 +151,9 @@ final class StrategyRepository
             teamId: $strategy->teamId,
             mapId: $strategy->mapId,
             strategyTypeId: $strategy->strategyTypeId,
-            players: $players,
             createdAt: $strategy->createdAt,
             updatedAt: $strategy->updatedAt,
+            players: $players
         );
     }
 
@@ -165,9 +165,9 @@ final class StrategyRepository
         return Database::getInstance()->transaction(function () use ($data): Strategy {
             $sql = "
             INSERT INTO team_strategies
-                (name, description, steps_to_do, team_id, map_id, strategy_type_id)
+                (name, description, steps_to_do, team_id, map_id, strategy_type_id, updated_by_user_id)
             VALUES
-                (:name, :description, :steps_to_do, :team_id, :map_id, :strategy_type_id)
+                (:name, :description, :steps_to_do, :team_id, :map_id, :strategy_type_id, :updated_by_user_id)
             RETURNING id
         ";
             $stmt = $this->pdo->prepare($sql);
@@ -178,6 +178,7 @@ final class StrategyRepository
                 ':team_id' => $data['team_id'],
                 ':map_id' => $data['map_id'],
                 ':strategy_type_id' => $data['strategy_type_id'],
+                ':updated_by_user_id' => $data['updated_by_user_id'],
             ]);
 
             $strategyId = (int)$stmt->fetchColumn();
@@ -196,7 +197,7 @@ final class StrategyRepository
             $sets = [];
             $params = [':id' => $id];
 
-            $allowed = ['map_id', 'strategy_type_id', 'name', 'description', 'steps_to_do'];
+            $allowed = ['map_id', 'strategy_type_id', 'name', 'description', 'steps_to_do', 'updated_by_user_id'];
 
             foreach ($allowed as $field) {
                 if (!array_key_exists($field, $data)) {
@@ -243,16 +244,17 @@ final class StrategyRepository
         });
     }
 
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
             UPDATE team_strategies 
             SET deleted_at = NOW(), 
-                updated_at = NOW() 
+                updated_at = NOW(),
+                updated_by_user_id = :updated_by_user_id
             WHERE id = :id 
               AND deleted_at IS NULL"
         );
-        $stmt->execute(['id' => $id]);
+        $stmt->execute(['id' => $id, 'updated_by_user_id' => $userId]);
 
         return $stmt->rowCount() === 1;
     }

@@ -113,8 +113,9 @@ final class StrategyService
         }
 
         $this->assertWriteAccess($strategy->teamId);
+        $userId = Auth::userId();
 
-        $success = $this->strategyRepository->delete($id);
+        $success = $this->strategyRepository->delete($id, $userId);
 
         if (!$success) {
             throw new RuntimeException('Failed to delete strategy.', 500);
@@ -222,6 +223,7 @@ final class StrategyService
             'description' => isset($data['description']) ? trim((string)$data['description']) : null,
             'steps_to_do' => $stepsToDo,
             'player_ids' => array_map('intval', $playerIds),
+            'updated_by_user_id' => Auth::userId(),
         ];
     }
 
@@ -271,6 +273,8 @@ final class StrategyService
             }
             $validated['player_ids'] = array_map('intval', $data['player_ids']);
         }
+
+        $validated['updated_by_user_id'] = Auth::userId();
 
         return $validated;
     }
