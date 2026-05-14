@@ -12,6 +12,7 @@ use Src\Repository\GameMapRepository;
 use Src\Repository\GameModeRepository;
 use Src\Repository\StrategyTypeRepository;
 use Src\Repository\TeamRepository;
+use Src\Repository\UserRepository;
 use Src\Service\DashboardService;
 use Src\Service\TeamService;
 
@@ -28,8 +29,9 @@ final class DashboardController
     {
         $teamRepository = new TeamRepository();
         $dashboardRepository = new DashboardRepository();
+        $userRepository = new UserRepository();
 
-        $this->teamService = new TeamService($teamRepository);
+        $this->teamService = new TeamService($teamRepository, $userRepository);
         $this->mapRepository = new GameMapRepository();
         $this->gameModeRepository = new GameModeRepository();
         $this->strategyTypeRepository = new StrategyTypeRepository();

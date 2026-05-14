@@ -50,6 +50,12 @@ final class Session
         $_SESSION[$key] = $value;
     }
 
+    public static function setUserField(string $field, mixed $value): void
+    {
+        self::assertStarted();
+        $_SESSION['user'][$field] = $value;
+    }
+
     public static function get(string $key, mixed $default = null): mixed
     {
         self::assertStarted();

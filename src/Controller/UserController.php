@@ -7,53 +7,49 @@ namespace Src\Controller;
 use Core\Auth;
 use Core\Response;
 use InvalidArgumentException;
-use RuntimeException;
 use JsonException;
-use Src\Enum\SystemRole;
-use Src\Repository\TeamRepository;
+use RuntimeException;
 use Src\Repository\UserRepository;
-use Src\Service\TeamService;
+use Src\Service\UserService;
 
-final class TeamController
+final class UserController
 {
-    private TeamService $teamService;
-
+    private UserService $userService;
     public function __construct()
     {
-        $teamRepository = new TeamRepository();
         $userRepository = new UserRepository();
-        $this->teamService = new TeamService($teamRepository, $userRepository);
+        $this->userService = new UserService($userRepository);
     }
 
     /**
-     * GET /teams
+     * PATCH /users/me
      */
-    public function getTeams(): void
+    public function updateUserProfile(): void
     {
-        Auth::requireRole([SystemRole::Admin->value]);
-        $teams = $this->teamService->getAll();
+        Auth::requireLogin();
 
-        Response::json([
-            'success' => true,
-            'data' => $teams
-        ]);
+        try {
+            $data   = $this->parseJsonBody();
+            $result = $this->userService->updateProfile($data);
+
+            Response::json(['success' => true, 'data' => $result]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
     }
 
     /**
-     * POST /teams
+     * PATCH /users/me/password
      */
-    public function createTeam(): void
+    public function updateUserPassword(): void
     {
         Auth::requireLogin();
 
         try {
             $data = $this->parseJsonBody();
-            $team = $this->teamService->createTeam($data);
+            $this->userService->updatePassword($data);
 
-            Response::json([
-                'success' => true,
-                'team' => $team
-            ], 201);
+            Response::json(['success' => true, 'message' => 'Password updated successfully']);
         } catch (InvalidArgumentException|RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }

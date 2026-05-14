@@ -105,6 +105,11 @@ $router->get('/strategy-types', [Src\Controller\StrategyTypeController::class, "
 
 // --- Team ---
 $router->get('/teams', [Src\Controller\TeamController::class, "getTeams"]);
+$router->post('/teams', [Src\Controller\TeamController::class, "createTeam"]);
+
+// --- User profile
+$router->patch('/users/me', [Src\Controller\UserController::class, "updateUserProfile"]);
+$router->patch('/users/me/password', [Src\Controller\UserController::class, "updateUserPassword"]);
 
 // 7. Dispatch
 

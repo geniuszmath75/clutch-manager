@@ -18,6 +18,30 @@ final class UserRepository
     }
 
     /**
+     * Returns the user by id, or null if it doesn't exist.
+     */
+    public function findById(int $id): ?User
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT u.id, u.nickname, u.email, u.password,
+                   sr.ident AS system_role,
+                   tr.ident AS team_role,
+                   u.team_id,
+                   u.is_active
+            FROM users u
+            JOIN system_roles sr ON sr.id = u.system_role_id
+            LEFT JOIN team_roles tr ON tr.id = u.team_role_id
+            WHERE u.id = :id
+              AND u.deleted_at IS NULL
+        ");
+        $params = ['id' => $id];
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? User::fromRow($row) : null;
+    }
+
+    /**
      * Returns the user by email, or null if it doesn't exist.
      */
     public function findByEmail(string $email): ?User
@@ -89,5 +113,67 @@ final class UserRepository
         ];
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Updates nickname and/or email for a given user.
+     * Returns the updated User model.
+     */
+    public function updateProfile(int $id, array $data): User
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE users
+            SET nickname   = COALESCE(:nickname, nickname),
+                email      = COALESCE(:email, email),
+                updated_at = NOW()
+            WHERE id = :id
+              AND deleted_at IS NULL
+        ");
+        $stmt->execute([
+            ':nickname' => $data['nickname'] ?? null,
+            ':email'    => $data['email']    ?? null,
+            ':id'       => $id,
+        ]);
+
+        return $this->findById($id);
+    }
+
+    /**
+     * Updates the hashed password for a given user and regenerates the session.
+     */
+    public function updatePassword(int $id, string $hashedPassword): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE users
+            SET password = :password_hash,
+                updated_at    = NOW()
+            WHERE id = :id
+              AND deleted_at IS NULL
+        ");
+        $stmt->execute([
+            ':password_hash' => $hashedPassword,
+            ':id'            => $id,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Assigns a team to a user and updates the session-visible team_id.
+     * Used after COACH creates a new team.
+     */
+    public function assignTeam(int $userId, int $teamId): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE users
+            SET team_id    = :team_id,
+                updated_at = NOW()
+            WHERE id = :id
+              AND deleted_at IS NULL
+        ");
+        $params = [':team_id' => $teamId, ':id' => $userId];
+        $stmt->execute($params);
+
+        return $stmt->rowCount() === 1;
     }
 }
