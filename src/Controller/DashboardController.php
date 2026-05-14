@@ -4,11 +4,15 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use InvalidArgumentException;
+use RuntimeException;
 use Src\Enum\SystemRole;
+use Src\Repository\DashboardRepository;
 use Src\Repository\GameMapRepository;
 use Src\Repository\GameModeRepository;
 use Src\Repository\StrategyTypeRepository;
 use Src\Repository\TeamRepository;
+use Src\Service\DashboardService;
 use Src\Service\TeamService;
 
 final class DashboardController
@@ -18,15 +22,18 @@ final class DashboardController
     private GameModeRepository $gameModeRepository;
 
     private StrategyTypeRepository $strategyTypeRepository;
+    private DashboardService $dashboardService;
 
     public function __construct()
     {
         $teamRepository = new TeamRepository();
+        $dashboardRepository = new DashboardRepository();
 
         $this->teamService = new TeamService($teamRepository);
         $this->mapRepository = new GameMapRepository();
         $this->gameModeRepository = new GameModeRepository();
         $this->strategyTypeRepository = new StrategyTypeRepository();
+        $this->dashboardService = new DashboardService($dashboardRepository);
     }
     /**
      * GET /
@@ -36,7 +43,89 @@ final class DashboardController
     {
         Auth::requireLogin();
 
-        Response::view('dashboard.html');
+        $systemRole = Auth::systemRole();
+
+        $viewPath = match ($systemRole) {
+            SystemRole::Admin->value => 'dashboard-admin.php',
+            default => 'dashboard-user.php',
+        };
+
+        Response::view($viewPath);
+    }
+
+    /**
+     * GET /dashboard/stats
+     */
+    public function getDashboardStats(): void
+    {
+        Auth::requireLogin();
+
+        try {
+            $stats = $this->dashboardService->getStats();
+
+            Response::json([
+                'success' => true,
+                'data' => $stats,
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /dashboard/admin/teams?page=1&pageSize=5
+     */
+    public function getAdminTeamStats(): void
+    {
+        Auth::requireLogin();
+
+        try {
+            $page = max(1, intval($_GET['page']) ?? 1);
+            $pageSize = max(1, min(50, intval($_GET['pageSize']) ?? 5));
+
+            $result = $this->dashboardService->getAdminTeamStats($page, $pageSize);
+
+            Response::json([
+                'success' => true,
+                'data'    => $result['teams'],
+                'meta'    => [
+                    'total'      => $result['total'],
+                    'page'       => $result['page'],
+                    'pageSize'   => $result['pageSize'],
+                    'totalPages' => $result['totalPages'],
+                ],
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /dashboard/admin/logs?page=1&pageSize=10
+     */
+    public function getAdminAuditLog(): void
+    {
+        Auth::requireLogin();
+
+        try {
+            $page     = max(1, intval($_GET['page']) ?? 1);
+            $pageSize = max(1, min(50, intval($_GET['pageSize']) ?? 10));
+
+            $result = $this->dashboardService->getAdminAuditLog($page, $pageSize);
+
+            Response::json([
+                'success' => true,
+                'data'    => $result['entries'],
+                'meta'    => [
+                    'total'      => $result['total'],
+                    'page'       => $result['page'],
+                    'pageSize'   => $result['pageSize'],
+                    'totalPages' => $result['totalPages'],
+                ],
+            ]);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            $this->handleError($e->getCode(), $e->getMessage());
+        }
     }
 
     /**
@@ -121,5 +210,16 @@ final class DashboardController
         Response::view("strategy-details.php", [
             'strategyId' => $id
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+
+    private function handleError(int $code, string $message): void
+    {
+        Response::json([
+            'success'      => false,
+            'statusCode'   => $code,
+            'errorMessage' => $message,
+        ], $code);
     }
 }

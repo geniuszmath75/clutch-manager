@@ -61,6 +61,9 @@ $router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser
 // --- Dashboard ---
 $router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
+$router->get('/dashboard/stats', [Src\Controller\DashboardController::class, 'getDashboardStats']);
+$router->get('/dashboard/admin/teams', [Src\Controller\DashboardController::class, 'getAdminTeamStats']);
+$router->get('/dashboard/admin/logs', [Src\Controller\DashboardController::class, 'getAdminAuditLog']);
 $router->get('/dashboard/players', [Src\Controller\DashboardController::class, 'showPlayersView']);
 $router->get('/dashboard/matches', [Src\Controller\DashboardController::class, 'showMatchesView']);
 $router->get('/dashboard/matches/{id}', [Src\Controller\DashboardController::class, 'showMatchDetailsView']);
