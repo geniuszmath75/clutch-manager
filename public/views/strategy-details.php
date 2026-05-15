@@ -19,6 +19,7 @@ $canDelete = in_array($systemRole, ['COACH', 'ADMIN'], true);
     <a href="/dashboard/players">Players</a>
     <a href="/dashboard/matches">Matches</a>
     <a href="/dashboard/strategies" aria-current="page">Strategies</a>
+    <a href="/dashboard/settings">Settings</a>
     <form method="POST" action="/auth/logout" style="display:inline">
         <button type="submit">Log out</button>
     </form>

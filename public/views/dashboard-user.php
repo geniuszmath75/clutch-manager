@@ -19,6 +19,7 @@ $nickname   = $_SESSION['user']['nickname']    ?? 'Player';
     <a href="/dashboard/players">Players</a>
     <a href="/dashboard/matches">Matches</a>
     <a href="/dashboard/strategies">Strategies</a>
+    <a href="/dashboard/settings">Settings</a>
     <form method="POST" action="/auth/logout" style="display:inline">
         <button type="submit">Log out</button>
     </form>

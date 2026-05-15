@@ -69,6 +69,7 @@ $router->get('/dashboard/matches', [Src\Controller\DashboardController::class, '
 $router->get('/dashboard/matches/{id}', [Src\Controller\DashboardController::class, 'showMatchDetailsView']);
 $router->get('/dashboard/strategies', [Src\Controller\DashboardController::class, 'showStrategiesView']);
 $router->get('/dashboard/strategies/{id}', [Src\Controller\DashboardController::class, 'showStrategyDetailsView']);
+$router->get('/dashboard/settings', [Src\Controller\DashboardController::class, 'showSettingsView']);
 
 // --- Players ---
 $router->get('/players', [Src\Controller\PlayerController::class, 'getPlayers']);

@@ -12,6 +12,7 @@ use Src\Repository\GameMapRepository;
 use Src\Repository\GameModeRepository;
 use Src\Repository\StrategyTypeRepository;
 use Src\Repository\TeamRepository;
+use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
 use Src\Service\DashboardService;
 use Src\Service\TeamService;
@@ -23,6 +24,7 @@ final class DashboardController
     private GameModeRepository $gameModeRepository;
 
     private StrategyTypeRepository $strategyTypeRepository;
+    private TeamRoleRepository $teamRoleRepository;
     private DashboardService $dashboardService;
 
     public function __construct()
@@ -36,6 +38,7 @@ final class DashboardController
         $this->gameModeRepository = new GameModeRepository();
         $this->strategyTypeRepository = new StrategyTypeRepository();
         $this->dashboardService = new DashboardService($dashboardRepository);
+        $this->teamRoleRepository = new TeamRoleRepository();
     }
     /**
      * GET /
@@ -211,6 +214,25 @@ final class DashboardController
 
         Response::view("strategy-details.php", [
             'strategyId' => $id
+        ]);
+    }
+
+    /**
+     * GET /dashboard/settings
+     */
+    public function showSettingsView(): void
+    {
+        Auth::requireLogin();
+
+        $systemRole = Auth::systemRole();
+        $teamRoles = [];
+
+        if ($systemRole === SystemRole::Player->value) {
+            $teamRoles = $this->teamRoleRepository->findAll();
+        }
+
+        Response::view("user-settings.php", [
+            'teamRoles' => $teamRoles
         ]);
     }
 
