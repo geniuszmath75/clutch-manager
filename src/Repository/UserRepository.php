@@ -27,10 +27,12 @@ final class UserRepository
                    sr.ident AS system_role,
                    tr.ident AS team_role,
                    u.team_id,
-                   u.is_active
+                   u.is_active,
+                   t.name AS team_name
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
+            LEFT JOIN teams t ON t.id = u.team_id
             WHERE u.id = :id
               AND u.deleted_at IS NULL
         ");
@@ -51,10 +53,12 @@ final class UserRepository
                           sr.ident AS system_role,
                           tr.ident AS team_role,
                           u.team_id,
-                          u.is_active
+                          u.is_active,
+                          t.name AS team_name
                    FROM users u
                    JOIN system_roles sr ON sr.id = u.system_role_id
                    LEFT JOIN team_roles tr ON tr.id = u.team_role_id
+                   LEFT JOIN teams t ON t.id = u.team_id
                    WHERE u.email = :email 
                         AND u.deleted_at IS NULL
         ');
@@ -125,6 +129,7 @@ final class UserRepository
             UPDATE users
             SET nickname   = COALESCE(:nickname, nickname),
                 email      = COALESCE(:email, email),
+                team_role_id = COALESCE(:team_role_id, team_role_id),
                 updated_at = NOW()
             WHERE id = :id
               AND deleted_at IS NULL
@@ -132,6 +137,7 @@ final class UserRepository
         $stmt->execute([
             ':nickname' => $data['nickname'] ?? null,
             ':email'    => $data['email']    ?? null,
+            ':team_role_id' => $data['team_role_id'] ?? null,
             ':id'       => $id,
         ]);
 

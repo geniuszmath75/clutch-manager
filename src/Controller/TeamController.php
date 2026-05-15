@@ -52,7 +52,7 @@ final class TeamController
 
             Response::json([
                 'success' => true,
-                'team' => $team
+                'data' => $team
             ], 201);
         } catch (InvalidArgumentException|RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());

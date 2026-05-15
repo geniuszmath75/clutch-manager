@@ -9,6 +9,7 @@ use Core\Response;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
+use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
 use Src\Service\UserService;
 
@@ -18,7 +19,8 @@ final class UserController
     public function __construct()
     {
         $userRepository = new UserRepository();
-        $this->userService = new UserService($userRepository);
+        $teamRoleRepository = new TeamRoleRepository();
+        $this->userService = new UserService($userRepository, $teamRoleRepository);
     }
 
     /**

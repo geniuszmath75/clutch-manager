@@ -14,6 +14,7 @@ final class User
         public readonly ?string $teamRole,
         public readonly ?int $teamId,
         public readonly bool $isActive,
+        public readonly ?string $teamName,
     ) {}
 
     public static function fromRow(array $row): self
@@ -27,6 +28,7 @@ final class User
             teamRole: $row['team_role'] ?? null,
             teamId: (int)$row['team_id'] ?? null,
             isActive: $row['is_active'],
+            teamName: $row['team_name'] ?? null,
         );
     }
 }

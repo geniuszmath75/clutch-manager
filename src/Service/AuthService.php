@@ -53,7 +53,9 @@ final class AuthService
             'nickname' => $user->nickname,
             'email' => $user->email,
             'system_role' => $user->systemRole,
+            'team_role' => $user->teamRole,
             'team_id' => $user->teamId,
+            'team_name' => $user->teamName,
         ]);
     }
 

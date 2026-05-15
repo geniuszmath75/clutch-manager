@@ -78,6 +78,7 @@ final class TeamService
         }
 
         Session::setUserField('team_id', $team->id);
+        Session::setUserField('team_name', $team->name);
 
         return $team;
     }

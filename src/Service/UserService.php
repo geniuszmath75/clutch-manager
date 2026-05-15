@@ -6,14 +6,17 @@ namespace Src\Service;
 
 use Core\Auth;
 use Core\Session;
-use http\Exception\RuntimeException;
+use RuntimeException;
 use InvalidArgumentException;
+use Src\Enum\SystemRole;
+use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
 
 final class UserService
 {
     public function __construct(
         private readonly UserRepository $userRepository,
+        private readonly TeamRoleRepository $teamRoleRepository,
     )
     {
     }
@@ -30,9 +33,10 @@ final class UserService
 
         $nickname = isset($data['nickname']) ? trim((string) $data['nickname']) : null;
         $email    = isset($data['email'])    ? trim((string) $data['email'])    : null;
+        $teamRoleIdent = isset($data['team_role_ident']) ? trim((string)$data['team_role_ident']) : null;
 
-        if ($nickname === null && $email === null) {
-            throw new InvalidArgumentException('At least one field (nickname or email) is required.', 400);
+        if ($nickname === null && $email === null && $teamRoleIdent === null) {
+            throw new InvalidArgumentException('At least one field (nickname, email or team_role_ident) is required.', 400);
         }
 
         if ($nickname !== null) {
@@ -56,9 +60,24 @@ final class UserService
             }
         }
 
+        $teamRoleId = null;
+
+        if ($teamRoleIdent !== null) {
+            if (Auth::systemRole() === SystemRole::Coach->value) {
+                throw new InvalidArgumentException('Coaches do not have a team role.', 400);
+            }
+
+            $teamRoleId = $this->teamRoleRepository->findIdByIdent($teamRoleIdent);
+
+            if (empty($teamRoleId)) {
+                throw new RuntimeException('Invalid team role.', 400);
+            }
+        }
+
         $user = $this->userRepository->updateProfile($userId, [
             'nickname' => $nickname,
             'email'    => $email,
+            'team_role_id' => $teamRoleId,
         ]);
 
         // Keep session in sync — update only changed fields
@@ -68,11 +87,15 @@ final class UserService
         if ($email !== null) {
             Session::setUserField('email', $user->email);
         }
+        if ($teamRoleId !== null) {
+            Session::setUserField('team_role', $user->teamRole);
+        }
 
         return [
             'id'       => $user->id,
             'nickname' => $user->nickname,
             'email'    => $user->email,
+            'team_role' => $user->teamRole,
         ];
     }
 
