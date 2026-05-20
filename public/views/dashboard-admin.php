@@ -6,38 +6,97 @@ $nickname = $_SESSION['user']['nickname'] ?? 'Admin';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/public/assets/css/dashboard.css" />
+    <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
     <title>Admin Dashboard – Clutch Manager</title>
 </head>
 <body
+        class="admin-dashboard"
         data-system-role="ADMIN"
         data-nickname="<?= htmlspecialchars($nickname, ENT_QUOTES) ?>"
 >
 
-<nav>
-    <a href="/dashboard" aria-current="page">Dashboard</a>
-    <a href="/dashboard/players">Players</a>
-    <a href="/dashboard/matches">Matches</a>
-    <a href="/dashboard/strategies">Strategies</a>
-    <a href="/dashboard/settings">Settings</a>
-    <form method="POST" action="/auth/logout" style="display:inline">
-        <button type="submit">Log out</button>
-    </form>
+<!-- SIDEBAR NAVIGATION -->
+<nav class="sidebar-nav">
+    <a href="/dashboard" class="sidebar-nav__logo">
+        <div class="sidebar-nav__logo-icon">
+            <img src="/public/assets/img/logo.svg" alt="Clutch Manager" />
+        </div>
+        <div class="sidebar-nav__logo-text">
+            <span>Clutch</span>
+            <span class="sidebar-nav__logo-accent">Manager</span>
+        </div>
+    </a>
+
+    <ul class="sidebar-nav__links">
+        <li>
+            <a href="/dashboard" class="sidebar-nav__link is-active" aria-current="page">
+                <span class="sidebar-nav__link-icon">
+                    <i class="fa-solid fa-gauge"></i>
+                </span>
+                Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard/players" class="sidebar-nav__link">
+                <span class="sidebar-nav__link-icon">
+                    <i class="fa-solid fa-users"></i>
+                </span>
+                Players
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard/matches" class="sidebar-nav__link">
+                <span class="sidebar-nav__link-icon">
+                    <i class="fa-solid fa-trophy"></i>
+                </span>
+                Matches
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard/strategies" class="sidebar-nav__link">
+                <span class="sidebar-nav__link-icon">
+                    <i class="fa-solid fa-chess"></i>
+                </span>
+                Strategies
+            </a>
+        </li>
+        <li>
+            <a href="/dashboard/settings" class="sidebar-nav__link">
+                <span class="sidebar-nav__link-icon">
+                    <i class="fa-solid fa-gear"></i>
+                </span>
+                Settings
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-nav__footer">
+        <form method="POST" action="/auth/logout">
+            <button type="submit" class="sidebar-nav__logout">
+                <span class="sidebar-nav__logout-icon">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                </span>
+                Log out
+            </button>
+        </form>
+    </div>
 </nav>
 
-<!-- HEADER -->
-<header class="dashboard-header">
-    <div class="dashboard-header__greeting">
-        <span class="dashboard-header__label">Welcome back,</span>
-        <h1 class="dashboard-header__nickname">
-            <?= htmlspecialchars($nickname, ENT_QUOTES) ?>
-        </h1>
-    </div>
-    <div class="dashboard-header__meta">
-        <span class="dashboard-header__role">ADMIN</span>
-    </div>
-</header>
-
 <main class="dashboard-main">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <div class="dashboard-header__greeting">
+            <span class="dashboard-header__label">Welcome back,</span>
+            <h1 class="dashboard-header__nickname">
+                <?= htmlspecialchars($nickname, ENT_QUOTES) ?>
+            </h1>
+        </div>
+        <div class="dashboard-header__meta">
+            <span class="dashboard-header__role">ADMIN</span>
+        </div>
+    </header>
 
     <!-- TEAM STATS SECTION -->
     <section class="dashboard-section" aria-label="Team statistics">

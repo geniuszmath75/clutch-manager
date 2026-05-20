@@ -1,0 +1,103 @@
+@import "dashboard.css";
+
+/* ===== USER DASHBOARD SPECIFIC ===== */
+/* Player stats cards and recent matches for PLAYER/COACH roles */
+
+/* ===== TABS ===== */
+.dashboard-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.dashboard-tabs__tab {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.625rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--quaternary-2);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.dashboard-tabs__tab:hover {
+    color: var(--white);
+}
+
+.dashboard-tabs__tab.is-active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.dashboard-tabs__role {
+    font-size: 0.75rem;
+    color: var(--quaternary-2);
+    font-weight: 400;
+}
+
+/* ===== STAT CARDS ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    background: var(--primary-2);
+    border: 1px solid var(--tertiary);
+    transition: 0.2s;
+}
+
+.stat-card__label {
+    font-size: 0.8rem;
+    color: var(--quaternary-2);
+    font-weight: 500;
+}
+
+.stat-card__value {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: var(--white);
+}
+
+/* Stat card color variants based on performance */
+.stat-card--poor {
+    background: var(--danger-01);
+    border-color: var(--danger);
+}
+
+.stat-card--poor .stat-card__value {
+    color: var(--danger);
+}
+
+.stat-card--medium {
+    background: var(--tertiary);
+    border-color: var(--tertiary);
+}
+
+.stat-card--good {
+    background: var(--accent-01);
+    border-color: var(--accent);
+}
+
+.stat-card--good .stat-card__value {
+    color: var(--accent);
+}
+
+.stats-grid__empty {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    text-align: center;
+    color: var(--quaternary-2);
+}
+

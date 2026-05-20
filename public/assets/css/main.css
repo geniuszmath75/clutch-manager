@@ -1,6 +1,8 @@
 :root {
     --primary: #0F172A;
+    --primary-2: #0F2314;
     --secondary: #080C09;
+    --secondary-2: #08150B;
     --tertiary: #1E293B;
     --white: #F1F5F9;
     --black: #020617;
@@ -11,6 +13,10 @@
     --bg-gradient: linear-gradient(180deg, var(--primary), var(--secondary));
     --font-size: 16px;
     --quaternary: #64748B;
+    --quaternary-2: #94A3B8;
+    --quaternary-2-01: rgba(148, 163, 184, 0.1);
+    --danger: #EF4444;
+    --danger-01: rgba(239, 68, 68, 0.1);
 }
 
 body {
