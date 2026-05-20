@@ -24,7 +24,9 @@ final class TeamRepository
             SELECT 
                 t.id,
                 t.name,
-                t.tag
+                t.tag,
+                t.created_at,
+                t.updated_at
             FROM teams t
             ORDER BY t.name
         ");

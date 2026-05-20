@@ -117,15 +117,15 @@ $teamRole   = $_SESSION['user']['team_role']   ?? null;
                         </div>
                     </div>
                 </div>
-
-                <p class="form-error" id="profile-error" hidden></p>
-                <p class="form-success" id="profile-success" hidden></p>
-
-                <div class="settings-card__actions" id="profile-actions" hidden>
-                    <button class="btn btn--ghost" id="profile-cancel-btn" type="button">Cancel</button>
-                    <button class="btn btn--primary" id="profile-save-btn" type="submit">Save changes</button>
-                </div>
             <?php endif; ?>
+
+            <p class="form-error" id="profile-error" hidden></p>
+            <p class="form-success" id="profile-success" hidden></p>
+
+            <div class="settings-card__actions" id="profile-actions" hidden>
+                <button class="btn btn--ghost" id="profile-cancel-btn" type="button">Cancel</button>
+                <button class="btn btn--primary" id="profile-save-btn" type="submit">Save changes</button>
+            </div>
         </form>
     </section>
 

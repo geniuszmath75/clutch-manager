@@ -10,8 +10,10 @@ interface ProfileResponse {
     id:       number;
     nickname: string;
     email:    string;
-    teamRole: string;
+    teamRole: string | null;
 }
+
+type ProfileSnapshot = Omit<ProfileResponse, "id">;
 
 interface TeamResponse {
     id:   number;
@@ -27,21 +29,19 @@ const systemRole = body.dataset['systemRole'] ?? '';
 const isCoach    = systemRole === 'COACH';
 
 // Snapshot of original input values — used by Cancel to restore state
-let profileSnapshot = { nickname: '', email: '', teamRole: '' };
+let profileSnapshot: ProfileSnapshot = { nickname: '', email: '', teamRole: null };
 
 /**
  * DOM elements
  */
 // Profile card
 const profileEditBtn    = document.getElementById('profile-edit-btn')!    as HTMLButtonElement;
-const profileCancelBtn  = document.getElementById('profile-cancel-btn')!  as HTMLButtonElement;
+const profileCancelBtn  = document.getElementById('profile-cancel-btn')  as HTMLButtonElement | null;
 const profileSaveBtn    = document.getElementById('profile-save-btn')!    as HTMLButtonElement;
-const profileActionsEl  = document.getElementById('profile-actions')!     as HTMLElement;
+const profileActionsEl  = document.getElementById('profile-actions')!;
 const profileForm       = document.getElementById('profile-form')!        as HTMLFormElement;
 const profileNickname   = document.getElementById('profile-nickname')!    as HTMLInputElement;
 const profileEmail      = document.getElementById('profile-email')!       as HTMLInputElement;
-const profileTeamRole   = document.getElementById('profile-team-role')!   as HTMLInputElement;
-const profileTeamRoleBtn = document.getElementById('profile-team-role-btn')! as HTMLButtonElement;
 const profileError      = document.getElementById('profile-error')!       as HTMLElement;
 const profileSuccess    = document.getElementById('profile-success')!     as HTMLElement;
 
@@ -65,6 +65,24 @@ const teamError         = document.getElementById('team-error')           as HTM
 const teamSuccess       = document.getElementById('team-success')         as HTMLElement | null;
 const teamInfo          = document.getElementById('team-info')    as HTMLElement | null;
 
+// TEAM ROLE FIELD OBJECT
+// Encapsulates nullability of the team-role select — present only for PLAYER.
+// All access goes through this object; no scattered `if (profileTeamRole)` guards.
+const teamRoleField = {
+    el: document.getElementById('profile-team-role')   as HTMLInputElement | null,
+    btn: document.getElementById('profile-team-role-btn') as HTMLButtonElement | null,
+    getValue(): string | null {
+        return this.el ? this.el.value.trim() : null;
+    },
+    setValue(val: string | null): void {
+        if (this.el) this.el.value = val ?? '';
+    },
+    setDisabled(disabled: boolean): void {
+        if (this.el)  this.el.disabled  = disabled;
+        if (this.btn) this.btn.disabled = disabled;
+    },
+}
+
 /**
  * API - update user profile
  */
@@ -75,13 +93,13 @@ async function saveProfile(): Promise<void> {
 
     const nickname = profileNickname.value.trim();
     const email    = profileEmail.value.trim();
-    const teamRole = profileTeamRole.value.trim();
+    const teamRole = teamRoleField.getValue();
 
     // Send only changed fields
     const payload: Record<string, string> = {};
     if (nickname !== profileSnapshot.nickname) payload['nickname'] = nickname;
     if (email    !== profileSnapshot.email)    payload['email']    = email;
-    if (teamRole !== profileSnapshot.teamRole) payload['team_role_ident'] = teamRole;
+    if (teamRole && teamRole !== profileSnapshot.teamRole) payload['team_role_ident'] = teamRole;
 
     if (Object.keys(payload).length === 0) {
         setEditMode('profile', false);
@@ -99,10 +117,15 @@ async function saveProfile(): Promise<void> {
             return;
         }
 
-        profileSnapshot = { nickname: res.data.nickname, email: res.data.email, teamRole: res.data.teamRole };
+        profileSnapshot = {
+            nickname: res.data.nickname,
+            email: res.data.email,
+            teamRole: res.data.teamRole ?? null
+        };
+
         profileNickname.value = res.data.nickname;
         profileEmail.value    = res.data.email;
-        profileTeamRole.value = res.data.teamRole;
+        teamRoleField.setValue(res.data.teamRole ?? null);
 
         setEditMode('profile', false);
         showMessage(profileSuccess, 'Profile updated successfully.');
@@ -208,7 +231,7 @@ function setEditMode(card: 'profile' | 'password', active: boolean): void {
     if (card === 'profile') {
         profileNickname.disabled  = !active;
         profileEmail.disabled     = !active;
-        profileTeamRoleBtn.disabled  = !active;
+        teamRoleField.setDisabled(!active);
         profileActionsEl.hidden   = !active;
         profileEditBtn.hidden     = active;
         profileEditBtn.setAttribute('aria-expanded', String(active));
@@ -217,7 +240,7 @@ function setEditMode(card: 'profile' | 'password', active: boolean): void {
             profileSnapshot = {
                 nickname: profileNickname.value,
                 email:    profileEmail.value,
-                teamRole: profileTeamRole.value
+                teamRole: teamRoleField.getValue()
             };
             profileNickname.focus();
         }
@@ -250,10 +273,10 @@ profileEditBtn.addEventListener('click', () => {
     setEditMode('profile', true);
 });
 
-profileCancelBtn.addEventListener('click', () => {
+profileCancelBtn?.addEventListener('click', () => {
     profileNickname.value = profileSnapshot.nickname;
     profileEmail.value    = profileSnapshot.email;
-    profileTeamRole.value = profileSnapshot.teamRole;
+    teamRoleField.setValue(profileSnapshot.teamRole);
     hideMessage(profileError);
     setEditMode('profile', false);
 });
@@ -309,5 +332,5 @@ function hideMessage(el: HTMLElement): void {
 profileSnapshot = {
     nickname: profileNickname.value,
     email:    profileEmail.value,
-    teamRole: profileTeamRole.value
+    teamRole: teamRoleField.getValue(),
 };
