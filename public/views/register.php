@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/public/assets/css/auth.css" />
+    <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
     <title>Register</title>
 </head>
 <body>
@@ -45,7 +46,7 @@
 
                     <div class="input-wrapper">
                         <div class="input-icon">
-                            <img src="/public/assets/img/person.svg" alt="Person icon" />
+                            <i class="fa-regular fa-user"></i>
                         </div>
 
                         <input id="nickname" type="text" name="nickname" placeholder="s1mple" required autofocus>
@@ -60,7 +61,7 @@
 
                     <div class="input-wrapper">
                         <div class="input-icon">
-                            <img src="/public/assets/img/email.svg" alt="Email icon" />
+                            <i class="fa-regular fa-envelope"></i>
                         </div>
 
                         <input id="email" type="email" name="email" placeholder="name@example.com" required>
@@ -75,13 +76,13 @@
 
                     <div class="input-wrapper">
                         <div class="input-icon">
-                            <img src="/public/assets/img/locked.svg" alt="Locked icon" />
+                            <i class="fa-solid fa-lock"></i>
                         </div>
 
                         <input id="password" type="password" name="password" placeholder="********" required autofocus>
 
                         <button type="button" class="input-action">
-                            <img src="/public/assets/img/eye-open.svg" alt="Open eye icon" />
+                            <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
@@ -104,7 +105,7 @@
                         <button type="button" class="custom-select__trigger" aria-expanded="false">
                             Select system role
                             <span class="custom-select__arrow">
-                                <img src="/public/assets/img/arrow-down.svg" alt="Arrow down icon" />
+                                <i class="fa-solid fa-chevron-down"></i>
                             </span>
                         </button>
 
@@ -144,27 +145,28 @@
                         <button type="button" class="custom-select__trigger" aria-expanded="false">
                             Select team role
                             <span class="custom-select__arrow">
-                                <img src="/public/assets/img/arrow-down.svg" alt="Arrow down icon" />
+                                <i class="fa-solid fa-chevron-down"></i>
                             </span>
                         </button>
 
                         <div class="custom-select__dropdown">
-                            <?php foreach ($teamRoles as $role): ?>
-                                <button
-                                        type="button"
-                                        data-value="<?= htmlspecialchars($role['ident']) ?>"
-                                        class="custom-select__option"
-                                >
-                                    <?= htmlspecialchars($role['ident']) ?>
-                                </button>
-                            <?php endforeach; ?>
+                            <?php if (!empty($teamRoles)) {
+                                    foreach ($teamRoles as $role) {
+                                        printf(
+                                            '<button type="button" data-value="%s" class="custom-select__option">%s</button>',
+                                            $role['ident'],
+                                            $role['ident']
+                                        );
+                                    }
+                            }
+                            ?>
                         </div>
                     </div>
                 </div>
 
                 <button type="submit" class="btn-accent">
                     <span class="btn-accent__label">Register</span>
-                    <img src="/public/assets/img/right-arrow.svg" alt="Right arrow icon" class="btn-accent__icon" />
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
 
@@ -183,37 +185,6 @@
     </div>
 </div>
 
-<script>
-    document
-    .querySelectorAll(".custom-select")
-    .forEach(select => {
-        const trigger = select.querySelector(".custom-select__trigger");
-
-        const hiddenInput = select.querySelector("input[type='hidden']")
-
-        const options = select.querySelectorAll(".custom-select__option");
-
-        trigger.addEventListener("click", () => {
-            select.classList.toggle("custom-select--open");
-
-            trigger.setAttribute("aria-expanded", select.classList.contains("custom-select--open"));
-        });
-
-        options.forEach(option => {
-            option.addEventListener("click", () => {
-
-                const value = option.dataset.value;
-                const label = option.textContent;
-                hiddenInput.value = value;
-
-                trigger.firstChild.textContent = label;
-
-                select.classList.remove("custom-select--open");
-
-                trigger.setAttribute("aria-expanded", false);
-            })
-        })
-    })
-</script>
+<script type="module" src="/public/assets/js/helpers/custom-select.js"></script>
 </body>
 </html>
