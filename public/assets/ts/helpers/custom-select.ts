@@ -1,16 +1,21 @@
 /**
- * Custom Select - Initialize all custom-select components on the page
+ * Custom Select — Initialize all custom-select components within a given root.
+ *
+ * @param root - Element to search within (defaults to document).
+ *               Pass a specific container (e.g. an open <dialog>) to re-initialize
+ *               only newly injected options without double-binding existing selects.
  */
+export function initCustomSelects(root: Element | Document = document): void {
+    root.querySelectorAll<HTMLElement>(".custom-select").forEach((select) => {
+        // Skip selects that have already been initialized
+        if (select.dataset['selectInit']) return;
+        select.setAttribute('data-select-init', 'true');
 
-export function initCustomSelects(): void {
-    document.querySelectorAll(".custom-select").forEach((select) => {
-        const trigger = select.querySelector(".custom-select__trigger") as HTMLButtonElement;
-        const hiddenInput = select.querySelector(
-            "input[type='hidden']"
-        ) as HTMLInputElement;
-        const options = select.querySelectorAll(".custom-select__option");
+        const trigger     = select.querySelector<HTMLButtonElement>(".custom-select__trigger");
+        const hiddenInput = select.querySelector<HTMLInputElement>("input[type='hidden']");
+        const dropdown    = select.querySelector<HTMLElement>(".custom-select__dropdown");
 
-        if (!trigger || !hiddenInput) return;
+        if (!trigger || !hiddenInput || !dropdown) return;
 
         // Toggle dropdown on trigger click
         trigger.addEventListener("click", () => {
@@ -21,28 +26,28 @@ export function initCustomSelects(): void {
             );
         });
 
-        // Handle option selection
-        options.forEach((option) => {
-            option.addEventListener("click", () => {
-                const value = option.getAttribute("data-value");
-                const label = option.textContent;
+        // Handle option selection — use event delegation on the dropdown so dynamically
+        // injected options are also caught without re-initializing the whole select
+        dropdown.addEventListener("click", (e: Event) => {
+            const option = (e.target as HTMLElement).closest<HTMLElement>(".custom-select__option");
+            if (!option || option.hasAttribute("disabled")) return;
 
-                if (!value || !label || !trigger.firstChild) return;
+            const value = option.getAttribute("data-value") ?? '';
+            const label = option.textContent?.trim() ?? '';
 
-                // Update hidden input value
-                hiddenInput.value = value;
+            hiddenInput.value = value;
+            hiddenInput.dispatchEvent(new Event('change'));
 
-                // Update trigger text (first text node of trigger)
+            if (trigger.firstChild) {
                 trigger.firstChild.textContent = label;
+            }
 
-                // Close dropdown
-                select.classList.remove("custom-select--open");
-                trigger.setAttribute("aria-expanded", "false");
-            });
+            select.classList.remove("custom-select--open");
+            trigger.setAttribute("aria-expanded", "false");
         });
 
         // Close dropdown when clicking outside
-        document.addEventListener("click", (e) => {
+        document.addEventListener("click", (e: MouseEvent) => {
             if (!select.contains(e.target as Node)) {
                 select.classList.remove("custom-select--open");
                 trigger.setAttribute("aria-expanded", "false");
@@ -50,7 +55,7 @@ export function initCustomSelects(): void {
         });
 
         // Close dropdown on Escape key
-        document.addEventListener("keydown", (e) => {
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 select.classList.remove("custom-select--open");
                 trigger.setAttribute("aria-expanded", "false");
@@ -61,7 +66,7 @@ export function initCustomSelects(): void {
 
 // Auto-initialize when DOM is ready
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initCustomSelects);
+    document.addEventListener("DOMContentLoaded", () => initCustomSelects());
 } else {
     initCustomSelects();
 }

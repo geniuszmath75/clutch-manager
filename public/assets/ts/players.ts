@@ -1,6 +1,8 @@
 import {apiFetch} from "./helpers/fetch-helpers.js";
 import type {PaginationMeta} from "./helpers/fetch-helpers.js";
 import {escapeHtml} from "./helpers/string-helpers.js";
+import {renderPagination, bindPaginationButtons} from "./helpers/pagination.js";
+import {initCustomSelects} from "./helpers/custom-select.js";
 
 export {};
 
@@ -16,23 +18,22 @@ interface Player {
     isActive: boolean;
 }
 
-const userRole = document.body.dataset['role'] ?? '';
-const isPlayer = userRole === 'PLAYER';
-const isCoach = userRole === 'COACH';
-const isAdmin = userRole === 'ADMIN';
-
-const canEdit = isAdmin;
+const userRole          = document.body.dataset['role'] ?? '';
+const isPlayer          = userRole === 'PLAYER';
+const isCoach           = userRole === 'COACH';
+const isAdmin           = userRole === 'ADMIN';
+const canEdit           = isAdmin;
 const canManageActivity = isAdmin || isCoach;
-const canManageTeam = isAdmin || isCoach;
+const canManageTeam     = isAdmin || isCoach;
 
 /**
  * Module state
  */
-let currentPlayers: Player[] = [];
-let availablePlayers: Player[] = [];
-let editingPlayerId: number | null = null;
-let currentPage = 1;
-let currentMeta: PaginationMeta | null = null;
+let currentPlayers:    Player[]          = [];
+let availablePlayers:  Player[]          = [];
+let editingPlayerId:   number | null     = null;
+let currentPage:       number            = 1;
+let currentMeta:       PaginationMeta | null = null;
 const pageSize = 5;
 
 /**
@@ -42,29 +43,30 @@ const loadingEl = document.getElementById('players-loading')!;
 const errorEl = document.getElementById('players-error')!;
 const listEl = document.getElementById('players-list')!;
 const tbodyEl = document.getElementById('players-tbody')!;
-const roleFilterEl = document.getElementById('role-filter') as HTMLSelectElement;
-const statusFilterEl = document.getElementById('status-filter') as HTMLSelectElement;
-const paginationEl = document.getElementById('pagination')!;
-const paginInfo = document.getElementById('pagination-info')!;
-const btnPrev = document.getElementById('btn-prev')! as HTMLButtonElement;
-const btnNext = document.getElementById('btn-next')! as HTMLButtonElement;
+const roleFilterEl = document.getElementById('role-filter') as HTMLInputElement;
+const statusFilterEl = document.getElementById('status-filter') as HTMLInputElement;
 const btnAdd = document.getElementById('btn-add-player') as HTMLButtonElement;
 
 // Edit modal
 const modalEdit = document.getElementById('modal-edit-player') as HTMLDialogElement;
 const formEdit = document.getElementById('form-edit-player') as HTMLFormElement;
 const inputNick = document.getElementById('edit-nickname') as HTMLInputElement;
-const selectRole = document.getElementById('edit-team-role') as HTMLSelectElement;
+const selectRole = document.getElementById('edit-team-role') as HTMLInputElement;
+const selectRoleTrigger = document.getElementById('edit-team-role-trigger') as HTMLButtonElement;
 const btnCancelEdit = document.getElementById('btn-cancel-edit') as HTMLButtonElement;
+const btnCloseEdit = document.getElementById('btn-close-edit') as HTMLButtonElement;
+const btnSavePlayer      = document.getElementById('btn-save-player')       as HTMLButtonElement;
 const editError = document.getElementById('edit-error')!;
 
 // Add-to-team modal
 const modalAddPlayerToTeam = document.getElementById('modal-add-player') as HTMLDialogElement;
-const selectAvailable = document.getElementById('add-player-select') as HTMLSelectElement;
+const selectAvailable = document.getElementById('add-player-select') as HTMLInputElement;
+const selectAvailableDropdown = document.getElementById('add-player-select-dropdown') as HTMLElement;
+const selectAvailableTrigger = document.getElementById('add-player-select-trigger') as HTMLButtonElement;
 const selectTeam = document.getElementById('add-team-select') as HTMLSelectElement;
-const teamSelectWrapper = document.getElementById('team-select-wrapper')!;
 const btnCancelAdd = document.getElementById('btn-cancel-add') as HTMLButtonElement;
 const btnConfirmAdd = document.getElementById('btn-confirm-add') as HTMLButtonElement;
+const btnCloseAdd = document.getElementById('btn-close-add') as HTMLButtonElement;
 const addError = document.getElementById('add-error')!;
 
 function initUI() {
@@ -73,9 +75,6 @@ function initUI() {
     if (canManageTeam) {
         btnAdd.hidden = false;
     }
-
-    // Team selector in modal only visible for ADMIN
-    teamSelectWrapper.hidden = !isAdmin;
 }
 
 /**
@@ -86,10 +85,10 @@ async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFil
 
     let filters = "";
 
-    if (roleFilter) {
+    if (roleFilter && roleFilter !== 'ALL') {
         filters += `&role=${encodeURIComponent(roleFilter)}`;
     }
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== 'ALL') {
         const isActive = encodeURIComponent(statusFilter) === 'ACTIVE';
         filters += `&is_active=${isActive}`;
 
@@ -172,43 +171,50 @@ async function updatePlayer(id: number, data: Partial<Pick<Player, 'nickname' | 
 }
 
 async function setPlayerActivity(id: number, active: boolean): Promise<void> {
-    try {
-        const action = active ? 'activate' : 'deactivate';
-        const res = await apiFetch(`/players/${id}/${action}`, {
-            method: 'PATCH',
-        });
-
-        if (!res.success) {
-            showError(res.errorMessage ?? `Failed to ${active ? 'activate' : 'deactivate'} player.`);
-        }
-    } catch {
-        showError('Server connection error');
-    }
+    const action = active ? 'activate' : 'deactivate';
+    const res = await apiFetch(`/players/${id}/${action}`, { method: 'PATCH' });
+    if (!res.success) throw new Error(res.errorMessage ?? `Failed to ${action} player.`);
 }
 
 async function deletePlayer(id: number): Promise<void> {
-    try {
-        const res = await apiFetch(`/players/${id}`, {
-            method: 'DELETE',
-        });
-
-        if (!res.success) {
-            showError(res.errorMessage ?? 'Failed to delete player.');
-        }
-    } catch {
-        showError('Server connection error');
-    }
+    const res = await apiFetch(`/players/${id}`, { method: 'DELETE' });
+    if (!res.success) throw new Error(res.errorMessage ?? 'Failed to delete player.');
 }
 
 /**
  * Render
  */
+function roleBadge(ident: string | null): string {
+    const cls = ident ? `role-badge--${ident.toLowerCase()}` : 'role-badge--unknown';
+    return `<span class="role-badge ${cls}">${escapeHtml(ident ?? '—')}</span>`;
+}
+
+function statusBadge(isActive: boolean): string {
+    const cls   = isActive ? 'status-indicator--active' : 'status-indicator--inactive';
+    const label = isActive ? 'Active' : 'Inactive';
+    return `<span class="status-indicator ${cls}">
+                <span class="status-indicator__dot"></span>
+                ${label}
+            </span>`;
+}
+
+/**
+ * Build a btn-icon button so that clicks on the inner <i> icon also carry the data-id.
+ * Using pointer-events:none on the icon is the CSS fix, but here we pass data-id to both
+ * the button AND the icon so the event delegation works regardless.
+ */
+function iconBtn(classes: string, id: number, iconClass: string): string {
+    return `<button class="btn-icon ${classes}" data-id="${id}">
+                <i class="${iconClass}" data-id="${id}"></i>
+            </button>`;
+}
+
 function renderTable(players: Player[]): void {
     tbodyEl.innerHTML = '';
 
     if (players.length === 0) {
         const colspan = isPlayer ? 3 : 4;
-        tbodyEl.innerHTML = `<tr><td colspan="${colspan}">No players found.</td></tr>`;
+        tbodyEl.innerHTML = `<tr><td class="empty-state" colspan="${colspan}">No players found.</td></tr>`;
         showList();
         return;
     }
@@ -216,65 +222,47 @@ function renderTable(players: Player[]): void {
     for (const player of players) {
         const tr = document.createElement('tr');
         tr.dataset['id'] = String(player.id);
-
-        const statusLabel = player.isActive ? 'Active' : 'Inactive';
+        if (!player.isActive) tr.classList.add('is-inactive');
 
         if (isPlayer) {
             tr.innerHTML = `
                 <td>${escapeHtml(player.nickname)}</td>
-                <td>${escapeHtml(player.teamRoleIdent ?? '—')}</td>
-                <td>${statusLabel}</td>
+                <td>${roleBadge(player.teamRoleIdent)}</td>
+                <td>${statusBadge(player.isActive)}</td>
             `;
             tbodyEl.appendChild(tr);
             continue;
         }
 
-        const editBtn = canEdit
-            ? `<button class="btn-edit" data-id="${player.id}">Edit</button>`
+        const editBtn       = canEdit
+            ? iconBtn('btn-icon--edit',        player.id, 'fa-solid fa-pen')
             : '';
-
-        const toggleBtn = canManageActivity
+        const toggleBtn     = canManageActivity
             ? player.isActive
-                ? `<button class="btn-deactivate" data-id="${player.id}">Deactivate</button>`
-                : `<button class="btn-activate"   data-id="${player.id}">Activate</button>`
+                ? iconBtn('btn-icon--toggle', player.id, 'fa-solid fa-toggle-off')
+                : iconBtn('btn-icon--toggle',   player.id, 'fa-solid fa-toggle-on')
             : '';
-
         const removeTeamBtn = canManageTeam && player.teamId !== null
-            ? `<button class="btn-remove-team" data-id="${player.id}">Remove from team</button>`
+            ? iconBtn('btn-icon--danger', player.id, 'fa-solid fa-person-circle-xmark')
+            : '';
+        const deleteBtn     = canEdit
+            ? iconBtn('btn-icon--danger',      player.id, 'fa-solid fa-trash')
             : '';
 
-        const deleteBtn = canEdit
-            ? `<button class="btn-delete" data-id="${player.id}">Delete</button>`
-            : '';
-
-        const actionsHtml = `${editBtn}${toggleBtn}${removeTeamBtn}${deleteBtn}` || '-';
+        const actionsHtml = `${editBtn}${toggleBtn}${removeTeamBtn}${deleteBtn}` || '–';
 
         tr.innerHTML = `
             <td>${escapeHtml(player.nickname)}</td>
-            <td>${escapeHtml(player.teamRoleIdent ?? '—')}</td>
-            <td>${statusLabel}</td>
-            <td class="actions-col">${actionsHtml}</td>
+            <td>${roleBadge(player.teamRoleIdent)}</td>
+            <td>${statusBadge(player.isActive)}</td>
+            <td class="col-actions">
+                <div class="actions-group">${actionsHtml}</div>
+            </td>
         `;
-
         tbodyEl.appendChild(tr);
     }
 
     showList();
-}
-
-/**
- * Render - pagination
- */
-function renderPagination(meta: PaginationMeta | null): void {
-    if (meta === null) {
-        paginationEl.hidden = true;
-        return;
-    }
-
-    paginationEl.hidden = false;
-    paginInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} players)`;
-    btnPrev.disabled = meta.page <= 1;
-    btnNext.disabled = meta.page >= meta.totalPages;
 }
 
 /**
@@ -284,6 +272,9 @@ function openEditModal(player: Player): void {
     editingPlayerId = player.id;
     inputNick.value = player.nickname;
     selectRole.value = player.teamRoleIdent ?? '';
+    if (selectRoleTrigger.firstChild) {
+        selectRoleTrigger.firstChild.textContent = player.teamRoleIdent ? player.teamRoleIdent : 'Select role';
+    }
     editError.hidden = true;
     editError.textContent = '';
     modalEdit.showModal();
@@ -299,23 +290,46 @@ function closeEditModal(): void {
  */
 
 async function openAddPlayerToTeamModal(): Promise<void> {
-    addError.hidden = true;
-    addError.textContent = '';
-    selectAvailable.innerHTML = '<option value="">Loading...</option>';
+    addError.hidden        = true;
+    addError.textContent   = '';
     btnConfirmAdd.disabled = true;
+
+    if (selectAvailableTrigger.firstChild) {
+        selectAvailableTrigger.firstChild.textContent = 'Loading...';
+    }
+
     modalAddPlayerToTeam.showModal();
 
     try {
         await fetchAvailablePlayers();
 
-        selectAvailable.innerHTML = availablePlayers.length > 0
-            ? availablePlayers.map(p => `<option value="${p.id}">${escapeHtml(p.nickname)}</option>`).join('')
-            : '<option value="" disabled>No available players</option>';
+        // Rebuild dropdown options after async load, then re-init custom-select on this element
+        selectAvailableDropdown.innerHTML = availablePlayers.length > 0
+            ? availablePlayers
+                .map(p => `<button type="button" class="custom-select__option" data-value="${p.id}">${escapeHtml(p.nickname)}</button>`)
+                .join('')
+            : '<button type="button" class="custom-select__option" data-value="" disabled>No available players</button>';
+
+        // Re-initialize only the add-player custom-select so the new options get event listeners
+        initCustomSelects(modalAddPlayerToTeam);
+
+        const firstLabel = availablePlayers.length > 0
+            ? escapeHtml(availablePlayers[0].nickname)
+            : 'No available players';
+
+        if (selectAvailableTrigger.firstChild) {
+            selectAvailableTrigger.firstChild.textContent = firstLabel;
+        }
+
+        // Pre-select first available player value in the hidden input
+        if (availablePlayers.length > 0) {
+            selectAvailable.value = String(availablePlayers[0].id);
+        }
 
         btnConfirmAdd.disabled = availablePlayers.length === 0;
     } catch (err: unknown) {
         addError.textContent = err instanceof Error ? err.message : 'Failed to load players.';
-        addError.hidden = false;
+        addError.hidden      = false;
         btnConfirmAdd.disabled = true;
     }
 }
@@ -337,147 +351,151 @@ statusFilterEl.addEventListener('change', async () => {
     await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
 })
 
-// Pagination
-btnPrev.addEventListener('click', async () => {
-    if (currentPage > 1) {
-        await fetchPlayers(currentPage - 1, roleFilterEl.value, statusFilterEl.value);
-    }
-});
-
-btnNext.addEventListener('click', async () => {
-    if (currentMeta && currentPage < currentMeta.totalPages) {
-        await fetchPlayers(currentPage + 1, roleFilterEl.value, statusFilterEl.value);
-    }
-});
-
-btnAdd.addEventListener('click', async () => {
-    await openAddPlayerToTeamModal();
-})
-
-tbodyEl.addEventListener('click', (e: Event) => {
-    const target = e.target as HTMLElement;
-    const id = Number(target.dataset['id']);
-    if (!id) return;
-
-    if (target.classList.contains('btn-edit')) {
-        const player = currentPlayers.find(p => p.id === id);
-        if (player) openEditModal(player);
-        return;
-    }
-
-    if (target.classList.contains('btn-activate')) {
-        if (!confirm(`Activate player #${id}?`)) return;
-
-        setPlayerActivity(id, true)
-            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
-            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
-        return;
-    }
-
-    if (target.classList.contains('btn-deactivate')) {
-        if (!confirm(`Deactivate player #${id}?`)) return;
-
-        setPlayerActivity(id, false)
-            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
-            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
-        return;
-    }
-
-    if (target.classList.contains('btn-remove-team')) {
-        if (!confirm(`Remove player #${id} from their team?`)) return;
-
-        removePlayerFromTeam(id)
-            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
-            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
-        return;
-    }
-
-    if (target.classList.contains('btn-delete')) {
-        if (!confirm(`Delete player #${id}? This operation cannot be undone.`)) return;
-        deletePlayer(id)
-            .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
-            .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
-        return;
-    }
-});
-
 // Edit modal events
-btnCancelEdit.addEventListener('click', closeEditModal);
+if (canEdit) {
+    btnCancelEdit.addEventListener('click', closeEditModal);
+    btnCloseEdit.addEventListener('click', closeEditModal);
 
-formEdit.addEventListener('submit', async (e: Event) => {
-    e.preventDefault();
-    if (editingPlayerId === null) return;
+    formEdit.addEventListener('submit', async (e: Event) => {
+        e.preventDefault();
+        if (editingPlayerId === null) return;
 
-    const btnSave = document.getElementById('btn-save-player') as HTMLButtonElement;
-    btnSave.disabled = true;
-    editError.hidden = true;
+        btnSavePlayer.disabled = true;
+        editError.hidden       = true;
 
-    try {
-        await updatePlayer(editingPlayerId, {
-            nickname: inputNick.value.trim(),
-            teamRoleIdent: selectRole.value || null,
-        });
+        try {
+            await updatePlayer(editingPlayerId, {
+                nickname:      inputNick.value.trim(),
+                teamRoleIdent: selectRole.value || null,
+            });
+            closeEditModal();
+            await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+        } catch (err: unknown) {
+            editError.textContent = err instanceof Error ? err.message : 'An error occurred';
+            editError.hidden      = false;
+        } finally {
+            btnSavePlayer.disabled = false;
+        }
+    });
+}
 
-        closeEditModal();
-        await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
-    } catch (err: unknown) {
-        editError.textContent = err instanceof Error ? err.message : 'An error occurred';
-        editError.hidden = false;
-    } finally {
-        btnSave.disabled = false;
-    }
-});
+if (canManageTeam) {
+    btnAdd.addEventListener('click', async () => {
+        await openAddPlayerToTeamModal();
+    })
 
-// Add-to-team modal events
-btnCancelAdd.addEventListener('click', closeAddPlayerToTeamModal);
+    // Table action delegation — resolves icon clicks by walking up to the btn-icon wrapper
+    tbodyEl.addEventListener('click', (e: Event) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
 
-btnConfirmAdd.addEventListener('click', async () => {
-    const playerId = Number(selectAvailable.value);
+        if (!btn) return;
+        const id = Number(btn.dataset['id']);
+        if (!id) return;
 
-    // COACH — team_id comes from session (enforced on backend); ADMIN picks from selector
-    const teamId = isAdmin
-        ? Number(selectTeam.value)
-        : Number(document.body.dataset['teamId'] ?? 0);
+        if (btn.classList.contains('btn-icon--edit') || btn.classList.contains('fa-pen')) {
+            const player = currentPlayers.find(p => p.id === id);
+            if (player) openEditModal(player);
+            return;
+        }
 
-    if (!playerId || !teamId) {
-        addError.textContent = 'Please select a player and a team.';
-        addError.hidden = false;
-        return;
-    }
+        if (btn.classList.contains('btn-icon--toggle') || btn.classList.contains('fa-toggle-on')) {
+            if (!confirm(`Activate player #${id}?`)) return;
+            setPlayerActivity(id, true)
+                .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
+                .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+            return;
+        }
 
-    btnConfirmAdd.disabled = true;
-    addError.hidden = true;
+        if (btn.classList.contains('btn-icon--toggle') || btn.classList.contains('fa-toggle-off')) {
+            if (!confirm(`Deactivate player #${id}?`)) return;
+            setPlayerActivity(id, false)
+                .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
+                .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+            return;
+        }
 
-    try {
-        await addPlayerToTeam(playerId, teamId);
-        closeAddPlayerToTeamModal();
-        await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
-    } catch (err: unknown) {
-        addError.textContent = err instanceof Error ? err.message : 'An error occurred';
-        addError.hidden = false;
-        btnConfirmAdd.disabled = false;
-    }
-});
+        if (btn.classList.contains('btn-icon--danger') || btn.classList.contains('fa-person-circle-xmark')) {
+            if (!confirm(`Remove player #${id} from their team?`)) return;
+            removePlayerFromTeam(id)
+                .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
+                .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+            return;
+        }
+
+        if (btn.classList.contains('btn-icon--danger') || btn.classList.contains('fa-trash')) {
+            if (!confirm(`Delete player #${id}? This operation cannot be undone.`)) return;
+            deletePlayer(id)
+                .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
+                .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
+            return;
+        }
+    });
+
+    btnCancelAdd.addEventListener('click', closeAddPlayerToTeamModal);
+    btnCloseAdd.addEventListener('click', closeAddPlayerToTeamModal);
+
+    // Add-to-team modal events
+    btnConfirmAdd.addEventListener('click', async () => {
+        const playerId = Number(selectAvailable.value);
+
+        // COACH — team_id comes from session (enforced on backend); ADMIN picks from selector
+        const teamId = isAdmin
+            ? Number(selectTeam.value)
+            : Number(document.body.dataset['teamId'] ?? 0);
+
+        if (!playerId || !teamId) {
+            addError.textContent = 'Please select a player and a team.';
+            addError.hidden = false;
+            return;
+        }
+
+        btnConfirmAdd.disabled = true;
+        addError.hidden = true;
+
+        try {
+            await addPlayerToTeam(playerId, teamId);
+            closeAddPlayerToTeamModal();
+            await fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value);
+        } catch (err: unknown) {
+            addError.textContent = err instanceof Error ? err.message : 'An error occurred';
+            addError.hidden = false;
+            btnConfirmAdd.disabled = false;
+        }
+    });
+}
+
+// Pagination buttons wired via shared helper
+bindPaginationButtons(
+    (page) => fetchPlayers(page, roleFilterEl.value, statusFilterEl.value),
+    () => currentPage,
+    () => currentMeta
+);
 
 /**
  * UI helpers
  */
 function showLoading(): void {
-    loadingEl.hidden = true;
+    loadingEl.hidden = false;
+    loadingEl.classList.remove("state-loading--hidden");
     errorEl.hidden = true;
+    errorEl.classList.add("state-error--hidden");
     listEl.hidden = true;
 }
 
 function showError(msg: string): void {
     loadingEl.hidden = true;
+    loadingEl.classList.add("state-loading--hidden");
     errorEl.hidden = false;
+    errorEl.classList.remove("state-error--hidden");
     errorEl.textContent = msg;
     listEl.hidden = true;
 }
 
 function showList(): void {
     loadingEl.hidden = true;
+    loadingEl.classList.add("state-loading--hidden");
     errorEl.hidden = true;
+    errorEl.classList.add("state-error--hidden");
     listEl.hidden = false;
 }
 

@@ -17,8 +17,27 @@ $nickname   = $_SESSION['user']['nickname']    ?? 'Player';
         data-nickname="<?= htmlspecialchars($nickname, ENT_QUOTES) ?>"
 >
 
+<!-- MOBILE TOPBAR (hidden on desktop) -->
+<div class="mobile-topbar">
+    <a href="/dashboard" class="mobile-topbar__logo">
+        <div class="mobile-topbar__logo-icon">
+            <img src="/public/assets/img/logo.svg" alt="Clutch Manager" width="20" height="20">
+        </div>
+        <div class="mobile-topbar__logo-text">
+            <span>Clutch</span>
+            <span class="mobile-topbar__logo-accent">Manager</span>
+        </div>
+    </a>
+    <button class="btn-nav-toggle" id="btn-nav-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar-nav">
+        <i class="fa-solid fa-bars" id="nav-toggle-icon"></i>
+    </button>
+</div>
+
+<!-- OVERLAY (mobile drawer backdrop) -->
+<div class="sidebar-nav__overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
 <!-- SIDEBAR NAVIGATION -->
-<nav class="sidebar-nav">
+<nav class="sidebar-nav" id="sidebar-nav" aria-label="Main navigation">
     <a href="/dashboard" class="sidebar-nav__logo">
         <div class="sidebar-nav__logo-icon">
             <img src="/public/assets/img/logo.svg" alt="Clutch Manager" />
@@ -139,6 +158,7 @@ $nickname   = $_SESSION['user']['nickname']    ?? 'Player';
 
 </main>
 
+<script type="module" src="/public/assets/js/helpers/sidebar-nav.js"></script>
 <script type="module" src="/public/assets/js/dashboard-user.js"></script>
 </body>
 </html>
