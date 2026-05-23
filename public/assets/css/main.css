@@ -139,6 +139,65 @@ input::placeholder {
     border-color: var(--quaternary);
 }
 
+/* ===== ACTIONS BUTTONS ===== */
+/* Small icon buttons for actions like edit, delete, toggle with hover effects and color coding */
+.col-actions {
+    text-align: right;
+}
+
+.actions-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.375rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-size: 1.25rem;
+}
+
+.btn-icon--edit {
+    color: var(--quaternary-2);
+    border-color: var(--tertiary);
+}
+
+.btn-icon--edit:hover {
+    background: var(--tertiary);
+    color: var(--white);
+    border-color: var(--white);
+}
+
+.btn-icon--danger {
+    color: var(--danger);
+    border-color: transparent;
+}
+
+.btn-icon--danger:hover {
+    background: var(--danger-01);
+    border-color: var(--danger);
+}
+
+.btn-icon--toggle {
+    color: var(--quaternary-2);
+    border-color: var(--tertiary);
+}
+
+.btn-icon--toggle:hover {
+    background: var(--tertiary);
+    color: var(--white);
+    border-color: var(--white);
+}
+
 /* ===== CUSTOM SELECT ===== */
 /* Styled dropdown select replacement with keyboard and mouse support */
 
@@ -185,7 +244,7 @@ input::placeholder {
 }
 
 .custom-select--open .custom-select__dropdown {
-    max-height: 16rem;
+    max-height: 21rem;
     opacity: 1;
     pointer-events: auto;
     visibility: visible;
@@ -231,4 +290,118 @@ input::placeholder {
     height: 1px;
     width: 100%;
     background: var(--tertiary);
+}
+
+/* ===== PAGE HEADER ===== */
+/* Title + subtitle + CTA button */
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.page-header__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.page-header__title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--white);
+}
+
+.page-header__subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--quaternary-2);
+}
+
+/* ===== PAGINATION ===== */
+/* Row below table: count label on left, page controls on right */
+
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--tertiary);
+    background: var(--primary);
+    border-radius: 0 0 0.75rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--quaternary-2);
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.btn-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--tertiary);
+    background: transparent;
+    color: var(--white);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: var(--tertiary);
+    color: var(--white);
+    border-color: var(--quaternary-2);
+}
+
+.btn-page:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* ===== MODAL ===== */
+.btn-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--tertiary);
+    background: transparent;
+    color: var(--quaternary-2);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-size: 0.875rem;
+}
+
+.btn-modal-close:hover {
+    background: var(--tertiary);
+    color: var(--white);
+}
+
+.modal-error {
+    color: var(--danger);
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .pagination-wrapper {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 }
