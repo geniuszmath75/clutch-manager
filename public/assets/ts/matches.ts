@@ -2,6 +2,7 @@ import {apiFetch} from "./helpers/fetch-helpers.js";
 import type {PaginationMeta} from "./helpers/fetch-helpers.js";
 import {formatDate} from "./helpers/date-helpers.js";
 import {escapeHtml} from "./helpers/string-helpers.js";
+import { renderPagination, bindPaginationButtons } from "./helpers/pagination.js";
 
 export {};
 
@@ -49,44 +50,39 @@ const systemRole = body.dataset['systemRole'] ?? '';
 const sessionTeamId = body.dataset['teamId'] ? parseInt(body.dataset['teamId'] ?? '0', 10) : null;
 const canWrite = systemRole === 'COACH' || systemRole === 'ADMIN';
 
-let currentPage = 1;
+let currentPage: number            = 1;
 let currentMeta: PaginationMeta | null = null;
 const PAGE_SIZE = 5;
 let filterDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-// Stats row state: array parallel to loaded players
 let statsPlayers: Player[] = [];
 
 /**
  * DOM elements
  */
-const tbody = document.getElementById('matches-tbody')!;
-const paginationEl = document.getElementById('pagination')!;
-const paginInfo = document.getElementById('pagination-info')!;
-const btnPrev = document.getElementById('btn-prev')! as HTMLButtonElement;
-const btnNext = document.getElementById('btn-next')! as HTMLButtonElement;
-const errorBanner = document.getElementById('error-banner')!;
+const tbody        = document.getElementById('matches-tbody')!;
+const errorBanner  = document.getElementById('error-banner')!;
 const filterOpponent = document.getElementById('filter-opponent') as HTMLInputElement;
-const filterMap = document.getElementById('filter-map') as HTMLSelectElement;
-const filterResult = document.getElementById('filter-result') as HTMLSelectElement;
+const filterMap      = document.getElementById('filter-map')      as HTMLSelectElement;
+const filterResult   = document.getElementById('filter-result')   as HTMLSelectElement;
 
 // Add match modal
-const modal = document.getElementById('modal-add-match') as HTMLDialogElement;
-const btnOpen = document.getElementById('btn-add-match') as HTMLButtonElement;
-const btnClose = document.getElementById('btn-modal-close') as HTMLButtonElement;
-const btnCancel = document.getElementById('btn-cancel') as HTMLButtonElement;
-const btnSave = document.getElementById('btn-save-match') as HTMLButtonElement;
+const modal      = document.getElementById('modal-add-match')  as HTMLDialogElement | null;
+const btnOpen    = document.getElementById('btn-add-match')    as HTMLButtonElement  | null;
+const btnClose   = document.getElementById('btn-modal-close')  as HTMLButtonElement  | null;
+const btnCancel  = document.getElementById('btn-cancel')       as HTMLButtonElement  | null;
+const btnSave    = document.getElementById('btn-save-match')   as HTMLButtonElement  | null;
 const modalError = document.getElementById('modal-error')!;
 const statsTbody = document.getElementById('stats-tbody')!;
-const teamSelect = document.getElementById('match-team-id') as HTMLSelectElement | null;
+const teamSelect = document.getElementById('match-team-id')    as HTMLSelectElement  | null;
 
 // Modal - match details
-const matchOpponent = document.getElementById('match-opponent') as HTMLInputElement;
-const matchTeamScore = document.getElementById('match-team-score') as HTMLInputElement;
+const matchOpponent      = document.getElementById('match-opponent')       as HTMLInputElement;
+const matchTeamScore     = document.getElementById('match-team-score')     as HTMLInputElement;
 const matchOpponentScore = document.getElementById('match-opponent-score') as HTMLInputElement;
-const matchMap = document.getElementById('match-map') as HTMLSelectElement;
-const matchDuration = document.getElementById('match-duration') as HTMLInputElement;
-const matchPlayedAt = document.getElementById('match-played-at') as HTMLInputElement;
-const matchGameMode = document.getElementById('match-game-mode') as HTMLSelectElement;
+const matchMap           = document.getElementById('match-map')            as HTMLSelectElement;
+const matchDuration      = document.getElementById('match-duration')       as HTMLInputElement;
+const matchPlayedAt      = document.getElementById('match-played-at')      as HTMLInputElement;
+const matchGameMode      = document.getElementById('match-game-mode')      as HTMLSelectElement;
 
 /**
  * API - matches list
@@ -99,8 +95,8 @@ async function fetchMatches(page: number): Promise<void> {
         pageSize: String(PAGE_SIZE),
     });
 
-    if (filterMap.value) params.set('map_ident', filterMap.value);
-    if (filterResult.value) params.set('result', filterResult.value);
+    if (filterMap.value && filterMap.value !== 'ALL' ) params.set('map_ident', filterMap.value);
+    if (filterResult.value && filterResult.value !== 'ALL') params.set('result', filterResult.value);
 
 
     try {
@@ -134,26 +130,26 @@ async function fetchMatches(page: number): Promise<void> {
  * API - team players list
  */
 async function fetchTeamPlayers(teamId: number): Promise<void> {
-    statsTbody.innerHTML = '<tr><td colspan="8" class="table__empty">Loading...</td></tr>';
+    statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
 
     try {
         const res = await apiFetch<Player[]>(`/players?team_id=${teamId}&is_active=true`);
 
         if (!res.success) {
-            statsTbody.innerHTML = '<tr><td colspan="8" class="table__empty">Failed to load players</td></tr>';
+            statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8">Failed to load players.</td></tr>';
             return;
         }
 
         statsPlayers = res.data ?? [];
 
         if (statsPlayers.length === 0) {
-            statsTbody.innerHTML = '<tr><td colspan="8" class="table__empty">No active players found</td></tr>';
+            statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8">No active players found.</td></tr>';
             return;
         }
 
         renderStatsRows(statsPlayers, statsTbody);
     } catch {
-        showError(statsTbody, "Server connection error");
+        statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8">Server connection error.</td></tr>';
     }
 
 }
@@ -182,6 +178,13 @@ async function addMatch(): Promise<void> {
     const gameModeId = parseInt(matchGameMode.value, 10);
 
     if (!opponent || isNaN(teamScore) || isNaN(oppScore) || !mapId || !duration || !playedAt || !gameModeId) {
+        console.log('Opponent: ', opponent);
+        console.log('Team Score: ', teamScore);
+        console.log('Opponent Score: ', oppScore);
+        console.log('Map ID: ', mapId);
+        console.log('Duration: ', duration);
+        console.log('Played At: ', playedAt);
+        console.log('Game Mode ID: ', gameModeId);
         showError(modalError, 'Please fill in all match info fields.');
         return;
     }
@@ -214,7 +217,7 @@ async function addMatch(): Promise<void> {
         stats,
     };
 
-    btnSave.disabled = true;
+    if (btnSave) btnSave.disabled = true;
 
     try {
         const res = await apiFetch<GameMatch>('/matches', {
@@ -228,70 +231,75 @@ async function addMatch(): Promise<void> {
         }
 
         closeAddMatchModal();
-        fetchMatches(currentPage);
+        await fetchMatches(currentPage);
     } catch {
         showError(modalError, 'Network error. Please try again.');
     } finally {
-        btnSave.disabled = false;
+        if (btnSave) btnSave.disabled = false;
     }
 }
 
 /**
  * Render
  */
+
+function resultBadge(result: 'WIN' | 'LOSS' | 'DRAW'): string {
+    return `<span class="result-badge result-badge--${result.toLowerCase()}">${result}</span>`;
+}
+
+function iconBtn(classes: string, href: string | null, id: number | null, iconClass: string): string {
+    if (href) {
+        return `<a href="${escapeHtml(href)}" class="btn-icon ${classes}">
+                    <i class="${iconClass}" data-id="${id ?? ''}"></i>
+                </a>`;
+    }
+    return `<button class="btn-icon ${classes}" data-id="${id}">
+                <i class="${iconClass}" data-id="${id}"></i>
+            </button>`;
+}
+
 function renderTable(matches: GameMatch[]): void {
     if (matches.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="table__empty">No matches found.</td></tr>';
+        tbody.innerHTML = '<tr><td class="empty-state" colspan="7">No matches found.</td></tr>';
         return;
     }
 
     tbody.innerHTML = matches.map(m => {
-        const resultClass = `badge badge--${m.result.toLowerCase()}`;
-        const date = formatDate(m.playedAt);
+        const detailsBtn = iconBtn('btn-icon--edit', `/dashboard/matches/${m.id}`, null, 'fa-solid fa-eye');
+        const actionsHtml = canWrite
+            ? `${detailsBtn}`
+            : detailsBtn;
 
         return `
             <tr>
-                <td>${m.id}</td>
-                <td>${escapeHtml(m.opponentName)}</td>
-                <td>${escapeHtml(m.mapIdent)}</td>
-                <td>${m.teamScore} : ${m.opponentScore}</td>
-                <td><span class="${resultClass}">${m.result}</span></td>
-                <td>${date}</td>
                 <td>
-                    <a href="/dashboard/matches/${m.id}" class="btn btn--sm btn--secondary">Details</a>
+                    <div class="opponent-cell">
+                        ${escapeHtml(m.opponentName)}
+                    </div>
+                </td>
+                <td>${escapeHtml(m.mapIdent)}</td>
+                <td class="score-cell">${m.teamScore} – ${m.opponentScore}</td>
+                <td>${resultBadge(m.result)}</td>
+                <td>${formatDate(m.playedAt)}</td>
+                <td class="col-actions">
+                    <div class="actions-group">${actionsHtml}</div>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
-/**
- * Render - pagination
- */
-function renderPagination(meta: PaginationMeta | null): void {
-    if (!meta) {
-        paginationEl.hidden = true;
-        return;
-    }
-
-    paginationEl.hidden = false;
-    paginInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} matches)`;
-
-    btnPrev.disabled = meta.page <= 1;
-    btnNext.disabled = meta.page >= meta.totalPages;
-}
-
 function renderStatsRows(players: Player[], target: HTMLElement): void {
     target.innerHTML = players.map((p, i) => `
         <tr data-player-id="${p.id}">
             <td>${escapeHtml(p.nickname)}</td>
-            <td><input class="input input--sm" type="number" name="kills_number"         data-i="${i}" min="0" value="0"></td>
-            <td><input class="input input--sm" type="number" name="deaths_number"        data-i="${i}" min="0" value="0"></td>
-            <td><input class="input input--sm" type="number" name="assists_number"       data-i="${i}" min="0" value="0"></td>
-            <td><input class="input input--sm" type="number" name="flash_assists_number" data-i="${i}" min="0" value="0"></td>
-            <td><input class="input input--sm" type="number" name="total_damage"         data-i="${i}" min="0" value="0"></td>
-            <td><input class="input input--sm" type="number" name="hs_percent"           data-i="${i}" min="0" max="100" value="0"></td>
-            <td><input class="input input--sm" type="number" name="rkast_number"         data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="kills_number"         data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="deaths_number"        data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="assists_number"       data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="flash_assists_number" data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="total_damage"         data-i="${i}" min="0" value="0"></td>
+            <td><input type="number" name="hs_percent"           data-i="${i}" min="0" max="100" value="0"></td>
+            <td><input type="number" name="rkast_number"         data-i="${i}" min="0" value="0"></td>
         </tr>
     `).join('');
 }
@@ -299,9 +307,9 @@ function renderStatsRows(players: Player[], target: HTMLElement): void {
 /**
  * Filters
  */
-async function onFilterChange(): Promise<void> {
-    await fetchMatches(1);
-}
+// async function onFilterChange(): Promise<void> {
+//     await fetchMatches(1);
+// }
 
 function onOpponentInput(): void {
     if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
@@ -313,65 +321,50 @@ function onOpponentInput(): void {
  */
 
 async function openAddMatchModal(): Promise<void> {
-    modal.showModal();
-    modal.hidden = false;
+    if (!modal) return;
     hideError(modalError);
+    modal.showModal();
 
     if (systemRole === 'COACH' && sessionTeamId) {
         await fetchTeamPlayers(sessionTeamId);
     }
-    // ADMIN: wait for team selection
+    // ADMIN: wait for team selection via change event
 }
 
 function closeAddMatchModal(): void {
+    if (!modal) return;
     hideError(modalError);
-    statsTbody.innerHTML = '<tr><td colspan="8" class="table__empty">Select a team to load players.</td></tr>';
+    statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8">Select a team to load players.</td></tr>';
     statsPlayers = [];
     modal.close();
 }
 
 function collectStatsRows(target: HTMLElement, players: Player[]): PlayerStats[] {
-    return players.map((p) => {
+    return players.map(p => {
         const row = target.querySelector<HTMLTableRowElement>(`tr[data-player-id="${p.id}"]`)!;
-
-        const get = (name: string): number => parseFloat((row.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ?? '0')) || 0;
+        const get = (name: string): number =>
+            parseFloat(row.querySelector<HTMLInputElement>(`[name="${name}"]`)?.value ?? '0') || 0;
 
         return {
-            playerId: p.id,
-            playerNickname: p.nickname,
-            killsNumber: get('kills_number'),
-            deathsNumber: get('deaths_number'),
-            assistsNumber: get('assists_number'),
+            playerId:           p.id,
+            playerNickname:     p.nickname,
+            killsNumber:        get('kills_number'),
+            deathsNumber:       get('deaths_number'),
+            assistsNumber:      get('assists_number'),
             flashAssistsNumber: get('flash_assists_number'),
-            totalDamage: get('total_damage'),
-            hsPercent: get('hs_percent'),
-            rkastNumber: get('rkast_number'),
+            totalDamage:        get('total_damage'),
+            hsPercent:          get('hs_percent'),
+            rkastNumber:        get('rkast_number'),
         };
     });
 }
-
 /**
  * Event listeners
  */
 
-// Pagination
-btnPrev.addEventListener('click', async () => {
-    if (currentPage > 1) {
-        await fetchMatches(currentPage - 1);
-    }
-});
-
-btnNext.addEventListener('click', async () => {
-    if (currentMeta && currentPage < currentMeta.totalPages) {
-        await fetchMatches(currentPage + 1);
-    }
-});
-
 filterOpponent.addEventListener('input', onOpponentInput);
-filterMap.addEventListener('change', async () => {
-    await onFilterChange();
-});
-filterResult.addEventListener('change', onFilterChange);
+filterMap.addEventListener('change', async () => await fetchMatches(1));
+filterResult.addEventListener('change', async () => await fetchMatches(1));
 
 // ADMIN — reload players when team changes
 teamSelect?.addEventListener('change', async () => {
@@ -379,16 +372,19 @@ teamSelect?.addEventListener('change', async () => {
     if (tid) await fetchTeamPlayers(tid);
 });
 
-if (canWrite) {
-    btnOpen.addEventListener('click', openAddMatchModal);
-    btnClose.addEventListener('click', closeAddMatchModal);
+if (canWrite && modal && btnOpen && btnClose && btnCancel && btnSave) {
+    btnOpen.addEventListener('click',   openAddMatchModal);
+    btnClose.addEventListener('click',  closeAddMatchModal);
     btnCancel.addEventListener('click', closeAddMatchModal);
-    document.getElementById('modal-overlay')?.addEventListener('click', closeAddMatchModal);
-
-    btnSave.addEventListener('click', async () => {
-        await addMatch();
-    });
+    btnSave.addEventListener('click',   addMatch);
 }
+
+// Pagination buttons wired via shared helper
+bindPaginationButtons(
+    (page) => fetchMatches(page),
+    () => currentPage,
+    () => currentMeta
+);
 
 /**
  * UI helpers
@@ -397,11 +393,13 @@ if (canWrite) {
 function showError(el: HTMLElement, msg: string): void {
     el.textContent = msg;
     el.hidden = false;
+    el.classList.remove("error-banner--hidden");
 }
 
 function hideError(el: HTMLElement): void {
     el.textContent = '';
     el.hidden = true;
+    el.classList.add("error-banner--hidden");
 }
 
 /**

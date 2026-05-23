@@ -108,17 +108,12 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
         </div>
         <!-- Visible for ADMIN and COACH only (toggled by players.ts) -->
         <?php
-            if ($role === 'COACH' || $role === 'ADMIN') {
-                printf(
-                        '<button id="btn-add-player"
-                                        class="btn-accent btn-accent__label btn-add-player"
-                                >
-                                    <i class="fas fa-user-plus"></i>
-                                    Add Player
-                                </button>'
-                );
-            }
-        ?>
+            if ($role === 'COACH' || $role === 'ADMIN'): ?>
+                        <button id="btn-add-player" class="btn-accent btn-accent__label btn-add-player">
+                            <i class="fas fa-user-plus"></i>
+                            Add Player
+                        </button>
+        <?php endif; ?>
     </header>
 
     <!-- Loading / error states -->
@@ -252,7 +247,7 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
         </div>
 
         <!-- Pagination -->
-        <nav id="pagination" class="players-pagination" aria-label="Player pagination" hidden>
+        <nav id="pagination" class="pagination-wrapper" aria-label="Player pagination" hidden>
             <span id="pagination-info"></span>
             <div class="pagination-controls">
                 <button id="btn-prev" class="btn-page" aria-label="Previous page">
