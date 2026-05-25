@@ -39,6 +39,7 @@ final class GameMatchRepository
             SELECT
                 gmatch.id,
                 gmatch.team_id,
+                t.name AS team_name,
                 gmatch.opponent_name,
                 gmatch.team_score,
                 gmatch.opponent_score,
@@ -51,6 +52,7 @@ final class GameMatchRepository
             FROM game_matches gmatch
             JOIN game_maps gmap ON gmatch.map_id = gmap.id
             JOIN game_modes gmode ON gmatch.game_mode_id = gmode.id
+            LEFT JOIN teams t ON gmatch.team_id = t.id
             WHERE 
                 gmatch.deleted_at IS NULL
                 " . $conditions . "
@@ -108,6 +110,7 @@ final class GameMatchRepository
             SELECT
                 gmatch.id,
                 gmatch.team_id,
+                t.name AS team_name,
                 gmatch.opponent_name,
                 gmatch.team_score,
                 gmatch.opponent_score,
@@ -120,6 +123,7 @@ final class GameMatchRepository
             FROM game_matches gmatch
             JOIN game_maps  gmap  ON gmatch.map_id       = gmap.id
             JOIN game_modes gmode ON gmatch.game_mode_id = gmode.id
+            LEFT JOIN teams t ON gmatch.team_id = t.id
             WHERE gmatch.id = :id
               AND gmatch.deleted_at IS NULL
         ");

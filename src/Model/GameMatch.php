@@ -6,11 +6,13 @@ final class GameMatch
 {
     public function __construct(
         public readonly int    $id,
+        public readonly string $teamName,
         public readonly string $opponentName,
         public readonly int    $opponentScore,
         public readonly int    $teamScore,
         public readonly int    $duration,
         public readonly string $mapIdent,
+        public readonly string $gameModeIdent,
         public readonly int    $mapId,
         public readonly int    $teamId,
         public readonly int    $gameModeId,
@@ -23,11 +25,13 @@ final class GameMatch
     {
         return new self(
             id: (int)$row['id'],
+            teamName: $row['team_name'],
             opponentName: $row['opponent_name'],
             opponentScore: (int)$row['opponent_score'],
             teamScore: (int)$row['team_score'],
             duration: (int)$row['duration'],
             mapIdent: $row['map_ident'],
+            gameModeIdent: $row['game_mode_ident'],
             mapId: (int)$row['map_id'],
             teamId: (int)$row['team_id'],
             gameModeId: (int)$row['game_mode_id'],
@@ -50,11 +54,13 @@ final class GameMatch
     {
         return [
             'id' => $this->id,
+            'teamName' => $this->teamName,
             'opponentName' => $this->opponentName,
             'opponentScore' => $this->opponentScore,
             'teamScore' => $this->teamScore,
             'duration' => $this->duration,
             'mapIdent' => $this->mapIdent,
+            'gameModeIdent' => $this->gameModeIdent,
             'mapId' => $this->mapId,
             'teamId' => $this->teamId,
             'gameModeId' => $this->gameModeId,
