@@ -1,0 +1,418 @@
+@import "main.css";
+@import "sidebar-nav.css";
+
+/* ===== PAGE LAYOUT ===== */
+
+.match-details-page {
+    display: flex;
+    min-height: 100vh;
+    background: var(--secondary-2);
+}
+
+.match-details-page__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 2.5rem;
+    overflow-y: auto;
+}
+
+/* ===== BACK LINK ===== */
+/* "<- Back to Matches" navigation link above the header */
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--quaternary-2);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.back-link:hover {
+    color: var(--white);
+}
+
+/* ===== LOADING / ERROR STATES ===== */
+
+.state-loading,
+.state-error {
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 0;
+    color: var(--quaternary-2);
+    font-size: 0.9rem;
+}
+
+.state-error {
+    color: var(--danger);
+}
+
+/* ===== MATCH HEADER ===== */
+/* Result badge + date + mode row, big score headline, map + duration tags */
+
+.match-header {
+    margin-bottom: 2rem;
+}
+
+.match-header__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.match-header__date {
+    font-size: 0.9rem;
+    color: var(--quaternary-2);
+}
+
+/* Score — "13 – 9 on Mirage" large headline */
+.match-header__title {
+    margin: 0 0 1rem;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--white);
+}
+
+/* Map + duration tag row */
+.match-header__tags {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.match-header__score {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.match-header__score-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--quaternary-2);
+}
+
+.match-header__score-value {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+/* ===== BADGES ===== */
+/* Result (WIN/LOSS/DRAW), map, duration, mode — pill-shaped labels */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.badge--win {
+    background: var(--accent-01);
+    color: var(--accent);
+}
+
+.badge--loss {
+    background: var(--danger-01);
+    color: var(--danger);
+}
+
+.badge--draw {
+    background: var(--quaternary-2-01);
+    color: var(--quaternary-2);
+    border-color: var(--tertiary);
+}
+
+/* Map and duration badges — outlined secondary style */
+.badge--secondary {
+    background: transparent;
+    color: var(--quaternary-2);
+    border-color: var(--tertiary);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.8rem;
+}
+
+/* ===== STATS TABLE ===== */
+/* Player performance table */
+
+.stats-section {
+    background: var(--primary);
+    border: 1px solid var(--tertiary);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.stats-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.stats-table-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.stats-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.stats-table thead tr {
+    border-bottom: 1px solid var(--tertiary);
+}
+
+.stats-table thead th {
+    padding: 0.875rem 1.25rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.stats-table tbody tr {
+    border-bottom: 1px solid var(--tertiary);
+    transition: background 0.15s;
+}
+
+.stats-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.stats-table tbody tr:hover {
+    background: var(--accent-01);
+}
+
+.stats-table tbody td {
+    padding: 1rem 1.25rem;
+    color: var(--white);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Player name — bold */
+.stats-table tbody td:first-child {
+    font-weight: 600;
+}
+
+/* ADR — bold accent */
+.stat--adr {
+    font-weight: 700;
+    color: var(--white);
+}
+
+/* +/- badges */
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.stat-badge--positive {
+    background: var(--accent-01);
+    color: var(--accent);
+}
+
+.stat-badge--negative {
+    background: var(--danger-01);
+    color: var(--danger);
+}
+
+.stat-badge--neutral {
+    background: var(--quaternary-2-01);
+    color: var(--quaternary-2);
+    border: 1px solid var(--tertiary);
+}
+
+/* Empty state row */
+.stats-table td.empty-state {
+    text-align: center;
+    padding: 3rem 1.25rem;
+    color: var(--quaternary);
+    white-space: normal;
+}
+
+/* ===== MATCH ACTIONS ===== */
+/* Edit + Delete buttons row below the stats table */
+
+.match-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* ===== MODALS ===== */
+
+/* Confirm delete — compact dialog */
+dialog.match-details-modal {
+    max-width: 26rem;
+}
+
+/* ===== MODAL SECTION ===== */
+/* Reuses .modal-section__title from matches.css */
+
+.modal-section__title {
+    margin: 0 0 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--quaternary-2);
+}
+
+/* ===== FORM GRID ===== */
+/* 4-column grid for match info fields inside the modal */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+/* Override base input for modal context */
+.form-field input,
+.form-field select {
+    height: 2.5rem;
+    padding: 0 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    outline: none;
+    border-color: var(--accent-02);
+}
+
+/* ===== EDIT STATS TABLE ===== */
+/* Player stats input table inside the edit modal */
+
+.edit-stats-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--tertiary);
+    border-radius: 0.5rem;
+}
+
+.edit-stats-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.edit-stats-table thead th {
+    padding: 0.625rem 0.875rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--secondary-2);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--tertiary);
+}
+
+.edit-stats-table tbody tr {
+    border-bottom: 1px solid var(--tertiary);
+}
+
+.edit-stats-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.edit-stats-table tbody td {
+    padding: 0.5rem 0.875rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.edit-stats-table input[type="number"] {
+    width: 4.5rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.edit-stats-table input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-02);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    .match-details-page {
+        flex-direction: column;
+    }
+
+    .match-details-page__content {
+        padding: calc(3.5rem + 1.25rem) 1rem 1.25rem;
+    }
+
+    .match-actions {
+        justify-content: stretch;
+        flex-direction: column;
+    }
+
+    .match-actions .btn-accent,
+    .match-actions .btn-danger {
+        width: 100%;
+    }
+
+    .stats-table-wrapper {
+        width: 100%;
+        scrollbar-width: none;
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    dialog.match-details-modal {
+        max-width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -263,15 +263,14 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
     </div>
 
     <!-- Modal: Edit player -->
-    <dialog id="modal-edit-player" class="players-modal" aria-labelledby="modal-edit-title">
-        <div class="modal-inner">
-            <div class="modal-header">
-                <h2 id="modal-edit-title" class="modal-title">Edit Player</h2>
+    <dialog id="modal-edit-player" class="modal modal-edit-player" aria-labelledby="modal-edit-title">
+            <div class="modal__header">
+                <h2 id="modal-edit-title" class="modal__title">Edit Player</h2>
                 <button type="button" id="btn-close-edit" class="btn-modal-close" aria-label="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <form id="form-edit-player" class="modal-form" method="dialog" novalidate>
+            <form id="form-edit-player" class="modal__body" method="dialog" novalidate>
                 <div class="form-field">
                     <label class="form-field__label" for="edit-nickname">Nickname</label>
                     <div class="input-wrapper">
@@ -346,29 +345,27 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
 
                 <p id="edit-error" class="modal-error" role="alert" hidden></p>
 
-                <div class="modal-actions">
-                    <button type="submit" id="btn-save-player" class="btn-accent">
-                        <span class="btn-accent__label">Save Changes</span>
-                    </button>
+                <div class="modal__actions">
                     <button type="button" id="btn-cancel-edit" class="btn-secondary">
                         <span class="btn-secondary__label">Cancel</span>
                     </button>
+                    <button type="submit" id="btn-save-player" class="btn-accent">
+                        <span class="btn-accent__label">Save Changes</span>
+                    </button>
                 </div>
             </form>
-        </div>
     </dialog>
 
     <!-- Modal: Add player to team -->
-    <dialog id="modal-add-player" class="players-modal" aria-labelledby="modal-add-title">
-        <div class="modal-inner">
-            <div class="modal-header">
-                <h2 id="modal-add-title" class="modal-title">Add Player to Team</h2>
+    <dialog id="modal-add-player" class="modal modal-add-player" aria-labelledby="modal-add-title">
+            <div class="modal__header">
+                <h2 id="modal-add-title" class="modal__title">Add Player to Team</h2>
                 <button type="button" id="btn-close-add" class="btn-modal-close" aria-label="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <div class="modal-form">
+            <div class="modal__body">
                 <div class="form-field">
                     <label class="form-field__label" for="add-player-select">Player</label>
                     <div class="input-wrapper">
@@ -445,16 +442,15 @@ $teamId = $_SESSION['user']['team_id'] ?? null;
 
                 <p id="add-error" class="modal-error" role="alert" hidden></p>
 
-                <div class="modal-actions">
-                    <button type="button" id="btn-confirm-add" class="btn-accent">
-                        <span class="btn-accent__label">Add to Team</span>
-                    </button>
+                <div class="modal__actions">
                     <button type="button" id="btn-cancel-add" class="btn-secondary">
                         <span class="btn-secondary__label">Cancel</span>
                     </button>
+                    <button type="button" id="btn-confirm-add" class="btn-accent">
+                        <span class="btn-accent__label">Add to Team</span>
+                    </button>
                 </div>
             </div>
-        </div>
     </dialog>
 </main>
 

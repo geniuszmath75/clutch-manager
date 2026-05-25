@@ -110,10 +110,10 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
     </header>
 
     <!-- Error banner -->
-    <div id="error-banner" class="error-banner" hidden></div>
+    <div id="error-banner" class="error-banner error-banner--hidden" hidden></div>
 
     <!-- Filters -->
-    <div class="matches-filters">
+    <div id="matches-filters" class="matches-filters">
         <div class="matches-filters__search">
             <i class="fa-solid fa-magnifying-glass matches-filters__search-icon"></i>
             <input
@@ -251,16 +251,16 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
 
     <!-- MODAL — ADD MATCH -->
     <?php if ($canWrite): ?>
-        <dialog id="modal-add-match" class="match-modal" aria-labelledby="modal-add-title">
+        <dialog id="modal-add-match" class="modal" aria-labelledby="modal-add-title">
 
-            <div class="match-modal__header">
-                <h2 id="modal-add-title" class="match-modal__title">Add New Match</h2>
+            <div class="modal__header">
+                <h2 id="modal-add-title" class="modal__title">Add New Match</h2>
                 <button class="btn-modal-close" id="btn-modal-close" aria-label="Close">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <div class="match-modal__body">
+            <div class="modal__body">
 
                 <!-- MATCH INFO -->
                 <section class="modal-section" aria-labelledby="section-match-info">
@@ -456,9 +456,9 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
 
             </div>
 
-            <div class="match-modal__footer">
+            <div class="modal__footer">
                 <div id="modal-error" class="modal-error" hidden role="alert"></div>
-                <div class="match-modal__actions">
+                <div class="modal__actions">
                     <button class="btn-secondary" id="btn-cancel">
                         <span class="btn-secondary__label">Cancel</span>
                     </button>
