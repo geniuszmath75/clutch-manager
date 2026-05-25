@@ -118,11 +118,16 @@ input::placeholder {
 
 /* Secondary button variant with border and hover effect */
 .btn-secondary {
-    flex: 1;
-    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    height: 3rem;
     border-radius: 0.75rem;
     border: 1px solid var(--tertiary);
     background: transparent;
+    color: var(--quaternary-2);
     font-weight: 500;
     font-size: 0.95rem;
     cursor: pointer;
@@ -137,6 +142,34 @@ input::placeholder {
     background: var(--tertiary);
     color: var(--white);
     border-color: var(--quaternary);
+}
+
+/* Danger button variant — destructive actions (delete, remove) */
+.btn-danger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--danger);
+    background: var(--danger-01);
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: var(--white);
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ===== ACTIONS BUTTONS ===== */
@@ -374,6 +407,73 @@ input::placeholder {
 }
 
 /* ===== MODAL ===== */
+dialog.modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: 100%;
+    max-width: 56rem;
+    max-height: 90vh;
+    padding: 0;
+    border: 1px solid var(--tertiary);
+    border-radius: 1rem;
+    background: var(--primary);
+    color: var(--white);
+    overflow-y: auto;
+}
+
+dialog.modal::backdrop {
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid var(--tertiary);
+    flex-shrink: 0;
+}
+
+.modal__title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.modal__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.modal__body p {
+    margin: 0;
+    color: var(--quaternary-2);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.modal__footer {
+    padding: 1.25rem 1.75rem;
+    border-top: 1px solid var(--tertiary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
 .btn-modal-close {
     display: flex;
     align-items: center;
@@ -403,5 +503,16 @@ input::placeholder {
     .pagination-wrapper {
         flex-direction: column;
         gap: 0.75rem;
+    }
+
+    /* Modal takes full screen on mobile */
+    dialog.modal {
+        max-width: 80%;
+        overflow: scroll;
+    }
+
+    .modal__actions {
+        flex-direction: column;
+        justify-content: stretch;
     }
 }

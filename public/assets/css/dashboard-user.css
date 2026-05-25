@@ -101,3 +101,12 @@
     color: var(--quaternary-2);
 }
 
+@media (max-width: 768px) {
+    .dashboard-tabs {
+        overflow-x: scroll;
+    }
+
+    .dashboard-tabs::-webkit-scrollbar {
+        display: none;
+    }
+}
