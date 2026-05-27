@@ -1,6 +1,8 @@
 import {apiFetch} from "./helpers/fetch-helpers.js";
 import type {PaginationMeta} from "./helpers/fetch-helpers.js";
 import {escapeHtml} from "./helpers/string-helpers.js";
+import { renderPagination, bindPaginationButtons } from "./helpers/pagination.js";
+import { initCustomSelects }   from "./helpers/custom-select.js";
 
 export {};
 
@@ -78,83 +80,95 @@ const TYPE_LABELS: Record<string, string> = {
 /**
  * DOM elements
  */
-const grid = document.getElementById('strategy-grid')!;
-const emptyState = document.getElementById('empty-state')!;
-const errorState = document.getElementById('error-state')!;
-const countEl = document.getElementById('strategies-count')!;
-const pagination = document.getElementById('pagination')!;
-const btnPrev = document.getElementById('btn-prev')! as HTMLButtonElement;
-const btnNext = document.getElementById('btn-next')! as HTMLButtonElement;
-const paginationInfo = document.getElementById('pagination-info')!;
-const tabs = document.querySelectorAll<HTMLButtonElement>('.strategy-tabs__tab');
+const grid        = document.getElementById('strategy-grid')!;
+const loadingState = document.getElementById('strategies-loading')!;
+const emptyState  = document.getElementById('empty-state')!;
+const errorState  = document.getElementById('error-state')!;
+const tabs        = document.querySelectorAll<HTMLButtonElement>('.strategy-tabs__tab');
 
 // Add strategy modal
-const modalAdd = document.getElementById('modal-add')! as HTMLDialogElement;
-const btnOpenAdd = document.getElementById('btn-open-add')! as HTMLButtonElement;
-const btnAddClose = document.getElementById('modal-add-close')! as HTMLButtonElement;
-const btnAddCancel = document.getElementById('btn-add-cancel')! as HTMLButtonElement;
-const btnAddSave = document.getElementById('btn-add-save')! as HTMLButtonElement;
-const addName = document.getElementById('add-name')! as HTMLInputElement;
-const addMap = document.getElementById('add-map')! as HTMLSelectElement;
-const addDesc = document.getElementById('add-description')! as HTMLTextAreaElement;
-const addError = document.getElementById('add-error')!;
-const addTagsList = document.getElementById('add-tags-list')!;
-const addDropdown = document.getElementById('add-player-dropdown')! as HTMLDivElement;
-const btnAddPlayer = document.getElementById('btn-add-player-tag')! as HTMLButtonElement;
-const addStepInput = document.getElementById('add-step-input')! as HTMLInputElement;
-const btnAddStep = document.getElementById('btn-add-step')! as HTMLButtonElement;
-const addStepsList = document.getElementById('add-steps-list')!;
+const modalAdd       = document.getElementById('modal-add')          as HTMLDialogElement | null;
+const btnOpenAdd     = document.getElementById('btn-open-add')        as HTMLButtonElement | null;
+const btnAddClose    = document.getElementById('modal-add-close')     as HTMLButtonElement | null;
+const btnAddCancel   = document.getElementById('btn-add-cancel')      as HTMLButtonElement | null;
+const btnAddSave     = document.getElementById('btn-add-save')        as HTMLButtonElement | null;
+const addName        = document.getElementById('add-name')            as HTMLInputElement;
+const addMapInput    = document.getElementById('add-map')             as HTMLInputElement;        // hidden input
+const addMapDropdown = document.getElementById('add-map-dropdown')    as HTMLElement;
+const addMapTrigger  = document.getElementById('add-map-trigger')     as HTMLButtonElement;
+const addDesc        = document.getElementById('add-description')     as HTMLTextAreaElement;
+const addError       = document.getElementById('add-error')!;
+const addTagsList    = document.getElementById('add-tags-list')!;
+const addDropdown    = document.getElementById('add-player-dropdown') as HTMLDivElement;
+const btnAddPlayer   = document.getElementById('btn-add-player-tag')  as HTMLButtonElement;
+const addStepInput   = document.getElementById('add-step-input')      as HTMLInputElement;
+const btnAddStep     = document.getElementById('btn-add-step')        as HTMLButtonElement;
+const addStepsList   = document.getElementById('add-steps-list')!;
 const typeSelectorEl = document.getElementById('add-type-selector')!;
 
 // ADMIN-only team selector (injected dynamically)
-let addTeamSelect: HTMLSelectElement | null = null;
+let addTeamInput: HTMLInputElement | null = null;
 
 /**
  * API - strategies list
  */
 async function fetchStrategies(page: number, typeId: string = ''): Promise<void> {
-    grid.innerHTML = '';
-    emptyState.hidden = true;
-    errorState.hidden = true;
+    showLoading();
 
     const params = new URLSearchParams({page: String(page), pageSize: String(PAGE_SIZE)});
     if (typeId !== '') params.set('strategy_type_id', typeId);
 
-    const res = await apiFetch<Strategy[]>(`/strategies?${params.toString()}`);
+    try {
+        const res = await apiFetch<Strategy[]>(`/strategies?${params.toString()}`);
 
-    if (!res.success || !res.data) {
-        showGlobalError(res.errorMessage ?? 'Failed to load strategies.');
-        return;
+        if (!res.success || !res.data) {
+            showGlobalError(res.errorMessage ?? 'Failed to load strategies.');
+            return;
+        }
+
+        currentMeta = res.meta ?? null;
+        currentPage = page;
+
+        renderGrid(res.data);
+        renderPagination(currentMeta, "strategies");
+    } catch {
+        showGlobalError('Server connection error');
     }
 
-    currentMeta = res.meta ?? null;
-    renderGrid(res.data);
-    renderPagination(currentMeta);
 
-    const total = currentMeta?.total ?? res.data.length;
-    countEl.textContent = `${total} ${total === 1 ? 'strategy' : 'strategies'}`;
 }
 
 /**
  * API - load dictionaries (strategy types + maps)
  */
 async function loadDictionaries(): Promise<void> {
-    const [typesRes, mapsRes] = await Promise.all([
-        apiFetch<DictEntry[]>('/strategy-types'),
-        apiFetch<DictEntry[]>('/game-maps'),
-    ]);
-    if (typesRes.success && typesRes.data) availableStrategyTypes = typesRes.data;
-    if (mapsRes.success && mapsRes.data) availableMaps = mapsRes.data;
+    try {
+        const [typesRes, mapsRes] = await Promise.all([
+            apiFetch<DictEntry[]>('/strategy-types'),
+            apiFetch<DictEntry[]>('/game-maps'),
+        ]);
+        if (typesRes.success && typesRes.data) availableStrategyTypes = typesRes.data;
+        if (mapsRes.success && mapsRes.data) availableMaps = mapsRes.data;
+    } catch {
+        showFormError(addError, "Failed to load strategy types and game maps.");
+    }
+
 }
 
 /**
  * API - load teams (ADMIN only)
  */
 async function loadTeams(): Promise<void> {
-    if (availableTeams.length > 0) return;
-    const res = await apiFetch<Team[]>('/teams');
-    if (res.success && res.data) availableTeams = res.data;
+    try {
+        if (availableTeams.length > 0) return;
+        const res = await apiFetch<Team[]>('/teams');
+
+        if (res.success && res.data) availableTeams = res.data;
+    } catch {
+        showFormError(addError, "Failed to load team list.");
+    }
 }
+
 
 /**
  * API - load players for a given team
@@ -164,8 +178,13 @@ async function loadPlayersForTeam(teamId: number): Promise<void> {
     selectedPlayerIds = [];
     renderAddTags();
 
-    const res = await apiFetch<StrategyPlayer[]>(`/players?status=active&team_id=${teamId}`);
-    if (res.success && res.data) availablePlayers = res.data;
+    try {
+        const res = await apiFetch<StrategyPlayer[]>(`/players?status=active&team_id=${teamId}`);
+        if (res.success && res.data) availablePlayers = res.data;
+    } catch {
+        showFormError(addError, "Failed to load team players");
+    }
+
 }
 
 /**
@@ -185,10 +204,15 @@ async function createStrategy(data: object): Promise<void> {
  * API - load team players
  */
 async function loadAvailablePlayers(): Promise<void> {
-    const res = await apiFetch<StrategyPlayer[]>('/players?pageSize=6&&status=active');
-    if (res.success && res.data) {
-        availablePlayers = res.data;
+    try {
+        const res = await apiFetch<StrategyPlayer[]>('/players?pageSize=6&&status=active');
+        if (res.success && res.data) {
+            availablePlayers = res.data;
+        }
+    } catch {
+        showFormError(addError, "Failed to load available players");
     }
+
 }
 
 /**
@@ -196,10 +220,10 @@ async function loadAvailablePlayers(): Promise<void> {
  */
 function renderGrid(items: Strategy[]): void {
     grid.innerHTML = '';
+    loadingState.hidden = true;
 
     if (items.length === 0) {
         emptyState.hidden = false;
-        pagination.hidden = true;
         return;
     }
 
@@ -215,17 +239,25 @@ function renderGrid(items: Strategy[]): void {
             : '<span class="player-chip player-chip--empty">No players assigned</span>';
 
         card.innerHTML = `
-            <div class="strategy-card__map-badge">MAP: ${escapeHtml(s.mapIdent)}</div>
+            <div class="strategy-card__map-badge">
+                <i class="fa-solid fa-map" style="font-size:0.65rem"></i>
+                ${escapeHtml(s.mapIdent)}
+            </div>
             <div class="strategy-card__body">
                 <h3 class="strategy-card__name">${escapeHtml(s.name)}</h3>
                 <p class="strategy-card__desc">${escapeHtml(s.description)}</p>
-                <p class="strategy-card__players-label">Assigned players</p>
+                <p class="strategy-card__players-label">Assigned Players</p>
                 <div class="strategy-card__players">${playersHtml}</div>
             </div>
             <hr class="strategy-card__divider">
             <div class="strategy-card__footer">
-                <span class="strategy-card__updated">Updated ${escapeHtml(updatedAgo)}</span>
-                <a class="strategy-card__link" href="/dashboard/strategies/${s.id}">View details \u2192</a>
+                <span class="strategy-card__updated">
+                    <i class="fa-regular fa-clock"></i>
+                    Updated ${escapeHtml(updatedAgo)}
+                </span>
+                <a class="strategy-card__link" href="/dashboard/strategies/${s.id}">
+                    View Details <i class="fa-solid fa-arrow-right" style="font-size:0.75rem"></i>
+                </a>
             </div>
         `;
 
@@ -234,34 +266,21 @@ function renderGrid(items: Strategy[]): void {
 }
 
 /**
- * Render - pagination
- */
-function renderPagination(meta: PaginationMeta | null): void {
-    if (!meta) {
-        pagination.hidden = true;
-        return;
-    }
-
-    pagination.hidden = false;
-    paginationInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} strategies)`;
-
-    btnPrev.disabled = meta.page <= 1;
-    btnNext.disabled = meta.page >= meta.totalPages;
-}
-
-/**
  * Render - player tags (add modal)
  */
 function renderAddTags(): void {
     if (!addTagsList) return;
+
     addTagsList.innerHTML = selectedPlayerIds.map(id => {
         const p = availablePlayers.find(pl => pl.id === id);
         if (!p) return '';
         return `<span class="player-tag">
-                ${escapeHtml(p.nickname)}
-                <button type="button" class="player-tag__remove" data-id="${p.id}"
-                        aria-label="Remove ${escapeHtml(p.nickname)}">&times;</button>
-            </span>`;
+                    ${escapeHtml(p.nickname)}
+                    <button type="button" class="player-tag__remove" data-id="${p.id}"
+                            aria-label="Remove ${escapeHtml(p.nickname)}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </span>`;
     }).join('');
 
     addTagsList.querySelectorAll<HTMLButtonElement>('.player-tag__remove').forEach(btn => {
@@ -273,17 +292,21 @@ function renderAddTags(): void {
     });
 }
 
-// Steps
+/**
+ * Render - steps list (add modal)
+ */
 function renderAddStepsList(): void {
     if (!addStepsList) return;
+
     addStepsList.innerHTML = addSteps.map((s, i) => `
-            <li class="steps-list__item">
-                <span class="steps-list__num">${i + 1}.</span>
-                <span class="steps-list__text">${escapeHtml(s)}</span>
-                <button type="button" class="steps-list__remove" data-index="${i}"
-                        aria-label="Remove step">&times;</button>
-            </li>
-        `).join('');
+        <li class="steps-list__item">
+            <span class="steps-list__num">${i + 1}.</span>
+            <span class="steps-list__text">${escapeHtml(s)}</span>
+            <button type="button" class="steps-list__remove" data-index="${i}" aria-label="Remove step">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </li>
+    `).join('');
 
     addStepsList.querySelectorAll<HTMLButtonElement>('.steps-list__remove').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -294,9 +317,12 @@ function renderAddStepsList(): void {
     });
 }
 
-// Player dropdown
+/**
+ * Render - player dropdown (add modal)
+ */
 function renderAddPlayerDropdown(): void {
     if (!addDropdown) return;
+
     const available = availablePlayers.filter(p => !selectedPlayerIds.includes(p.id));
 
     if (available.length === 0) {
@@ -318,21 +344,26 @@ function renderAddPlayerDropdown(): void {
     });
 }
 
-// Populate Add modal map select from loaded dictionaries
+/**
+ * Populate map custom-select from loaded dictionaries
+ */
 function populateAddMapSelect(): void {
-    if (!addMap) return;
-    addMap.innerHTML = '<option value="">Select map…</option>';
-    availableMaps.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = String(m.id);
-        opt.textContent = m.ident.charAt(0) + m.ident.slice(1).toLowerCase();
-        addMap!.appendChild(opt);
-    });
+    addMapDropdown.innerHTML = availableMaps.map(m =>
+        `<button type="button" class="custom-select__option" data-value="${m.id}">
+            ${escapeHtml(m.ident.charAt(0) + m.ident.slice(1).toLowerCase())}
+        </button>`
+    ).join('');
+
+    // Re-init the map custom-select after injecting options
+    if (modalAdd) initCustomSelects(modalAdd);
 }
 
-// Populate Add modal type selector from loaded dictionaries
+/**
+ * Populate type selector from loaded dictionaries
+ */
 function populateAddTypeSelector(): void {
     if (!typeSelectorEl) return;
+
     typeSelectorEl.innerHTML = availableStrategyTypes.map(t =>
         `<button type="button"
                  class="type-selector__option"
@@ -345,10 +376,12 @@ function populateAddTypeSelector(): void {
     typeSelectorEl.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.type-selector__option');
         if (!btn) return;
+
         typeSelectorEl.querySelectorAll<HTMLButtonElement>('.type-selector__option').forEach(b => {
             b.setAttribute('aria-pressed', 'false');
             b.classList.remove('is-active');
         });
+
         btn.setAttribute('aria-pressed', 'true');
         btn.classList.add('is-active');
         selectedTypeId = parseInt(btn.dataset['typeId'] ?? '0', 10);
@@ -360,57 +393,84 @@ function populateAddTypeSelector(): void {
  * The select is inserted once, before the player-tag row.
  */
 function ensureAdminTeamSelector(): void {
-    if (!modalAdd || addTeamSelect) return; // already injected
+    if (!modalAdd) return;
 
-    const playerRow = document.getElementById('add-player-tags')?.closest('.form-field');
-    if (!playerRow) return;
+    if (!addTeamInput) {
+        // First call — build the custom-select and insert it
+        const playerField = document.getElementById('player-field');
+        if (!playerField) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'form-field';
-    wrapper.innerHTML = `
-        <label class="form-label" for="add-team">Team <span class="required">*</span></label>
-        <select class="form-select" id="add-team">
-            <option value="">Select team…</option>
-            ${availableTeams.map(t =>
-        `<option value="${t.id}">${escapeHtml(t.name)}</option>`
-    ).join('')}
-        </select>
-    `;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-field';
+        wrapper.id = 'admin-team-field';
+        wrapper.innerHTML = `
+            <label class="form-field__label">Team <span class="required">*</span></label>
+            <div class="custom-select" id="add-team-select">
+                <input type="hidden" id="add-team" name="team_id">
+                <button type="button" id="add-team-trigger" class="custom-select__trigger" aria-expanded="false">
+                    Select team…
+                    <span class="custom-select__arrow">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </span>
+                </button>
+                <div id="add-team-dropdown" class="custom-select__dropdown"></div>
+            </div>
+        `;
 
-    playerRow.parentElement!.insertBefore(wrapper, playerRow);
-    addTeamSelect = wrapper.querySelector<HTMLSelectElement>('#add-team')!;
+        playerField.parentElement!.insertBefore(wrapper, playerField);
+        addTeamInput = wrapper.querySelector<HTMLInputElement>('#add-team')!;
 
-    addTeamSelect.addEventListener('change', async () => {
-        const teamId = parseInt(addTeamSelect!.value, 10);
-        if (!teamId) {
-            availablePlayers = [];
-            selectedPlayerIds = [];
-            renderAddTags();
-            selectedTeamId = null;
-            return;
-        }
-        selectedTeamId = teamId;
-        await loadPlayersForTeam(teamId);
-        // Close dropdown if open
-        if (addDropdown) addDropdown.hidden = true;
-    });
+        // Listen for changes on the hidden input (dispatched by custom-select.ts)
+        addTeamInput.addEventListener('change', async () => {
+            const teamId = parseInt(addTeamInput!.value, 10);
+            if (!teamId) {
+                availablePlayers  = [];
+                selectedPlayerIds = [];
+                renderAddTags();
+                selectedTeamId = null;
+                return;
+            }
+            selectedTeamId = teamId;
+            await loadPlayersForTeam(teamId);
+            if (addDropdown) addDropdown.hidden = true;
+        });
+    }
+
+    // Refresh options (teams may have changed)
+    const teamDropdown = document.getElementById('add-team-dropdown')!;
+    const teamTrigger  = document.getElementById('add-team-trigger') as HTMLButtonElement;
+
+    teamDropdown.innerHTML = availableTeams.map(t =>
+        `<button type="button" class="custom-select__option" data-value="${t.id}">${escapeHtml(t.name)}</button>`
+    ).join('');
+
+    // Reset trigger label
+    if (teamTrigger.firstChild) teamTrigger.firstChild.textContent = 'Select team…';
+    addTeamInput.value = '';
+    selectedTeamId = null;
+
+    // Re-init the team custom-select after refreshing options
+    initCustomSelects(modalAdd!);
 }
 
 /**
- * MODAL — Add Strategy (COACH / ADMIN only)
- */
+* MODAL — reset state
+*/
 function resetAddModal(): void {
-    addName.value = '';
-    addMap.value = '';
-    addDesc.value = '';
+    addName.value      = '';
+    addMapInput.value  = '';
+    addDesc.value      = '';
     addStepInput.value = '';
-    addError.hidden = true;
+    addError.hidden    = true;
     addError.textContent = '';
 
+    // Reset map trigger label
+    if (addMapTrigger.firstChild) addMapTrigger.firstChild.textContent = 'Select map';
+
     selectedPlayerIds = [];
-    addSteps = [];
-    selectedTypeId = null;
-    availablePlayers = [];
+    addSteps          = [];
+    selectedTypeId    = null;
+    availablePlayers  = [];
 
     renderAddTags();
     renderAddStepsList();
@@ -420,10 +480,11 @@ function resetAddModal(): void {
         btn.classList.remove('is-active');
     });
 
-    // Reset ADMIN team selector
-    if (isAdmin && addTeamSelect) {
-        addTeamSelect.value = '';
-        selectedTeamId = null;
+    if (isAdmin && addTeamInput) {
+        addTeamInput.value = '';
+        selectedTeamId     = null;
+        const teamTrigger  = document.getElementById('add-team-trigger') as HTMLButtonElement | null;
+        if (teamTrigger?.firstChild) teamTrigger.firstChild.textContent = 'Select team…';
     }
 }
 
@@ -444,21 +505,15 @@ tabs.forEach(tab => {
     });
 });
 
-btnPrev.addEventListener('click', async () => {
-    if (currentPage > 1) {
-        currentPage--;
-        await fetchStrategies(currentPage, currentTypeId);
-    }
-});
+// Pagination wired via shared helper
+bindPaginationButtons(
+    (page) => fetchStrategies(page, currentTypeId),
+    () => currentPage,
+    () => currentMeta
+);
 
-btnNext.addEventListener('click', async () => {
-    if (currentMeta && currentPage < currentMeta.totalPages) {
-        currentPage++;
-        fetchStrategies(currentPage, currentTypeId);
-    }
-});
-
-if (canWrite && modalAdd) {
+if (canWrite && modalAdd && btnOpenAdd && btnAddClose && btnAddCancel && btnAddSave) {
+    // Player tag dropdown toggle
     btnAddPlayer.addEventListener('click', () => {
         // ADMIN must select a team first
         if (isAdmin && !selectedTeamId) {
@@ -474,6 +529,7 @@ if (canWrite && modalAdd) {
         }
     });
 
+    // Close player dropdown on outside click
     document.addEventListener('click', (e) => {
         if (
             addDropdown &&
@@ -507,13 +563,6 @@ if (canWrite && modalAdd) {
         if (isAdmin) {
             await loadTeams();
             ensureAdminTeamSelector();
-            // Re-populate options in case teams changed
-            if (addTeamSelect) {
-                addTeamSelect.innerHTML = '<option value="">Select team…</option>'
-                    + availableTeams.map(t =>
-                        `<option value="${t.id}">${escapeHtml(t.name)}</option>`
-                    ).join('');
-            }
         } else {
             // COACH: load own team players once
             if (availablePlayers.length === 0) await loadAvailablePlayers();
@@ -534,7 +583,7 @@ if (canWrite && modalAdd) {
         hideError(addError);
 
         const name = addName.value.trim();
-        const mapId = parseInt(addMap.value, 10);
+        const mapId = parseInt(addMapInput.value, 10);
 
         if (isAdmin && !selectedTeamId) {
             showFormError(addError, 'Please select a team.');
@@ -586,9 +635,19 @@ if (canWrite && modalAdd) {
 /**
  * UI helpers
  */
+function showLoading(): void {
+    loadingState.hidden = false;
+    // loadingState.classList.remove("state-loading--hidden");
+    errorState.hidden = true;
+    emptyState.hidden = true;
+    // errorState.classList.add("state-error--hidden");
+    grid.innerHTML = '';
+}
+
 function showGlobalError(msg: string): void {
     errorState.textContent = msg;
     errorState.hidden = false;
+    loadingState.hidden = true;
     grid.innerHTML = '';
 }
 

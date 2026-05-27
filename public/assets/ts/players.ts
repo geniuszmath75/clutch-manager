@@ -109,7 +109,7 @@ async function fetchPlayers(page: number = 1, roleFilter: string = '', statusFil
         currentPage = page;
 
         renderTable(currentPlayers);
-        renderPagination(currentMeta);
+        renderPagination(currentMeta, "players");
     } catch {
         showError('Server connection error');
     }

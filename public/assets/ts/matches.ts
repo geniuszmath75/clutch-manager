@@ -119,7 +119,7 @@ async function fetchMatches(page: number): Promise<void> {
             : matches;
 
         renderTable(filtered);
-        renderPagination(res.meta ?? null);
+        renderPagination(res.meta ?? null, "matches");
     } catch {
         showError(errorBanner, "Server connection error");
     }

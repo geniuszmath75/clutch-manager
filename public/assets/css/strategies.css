@@ -1,0 +1,547 @@
+@import "main.css";
+@import "sidebar-nav.css";
+
+/* ===== PAGE LAYOUT ===== */
+
+.strategies-page {
+    display: flex;
+    min-height: 100vh;
+    background: var(--secondary-2);
+}
+
+.strategies-page__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 2.5rem;
+    overflow-y: auto;
+}
+
+/* ===== TYPE TABS ===== */
+/* Horizontal scrollable tab bar for filtering by strategy type */
+
+.strategy-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--tertiary);
+    overflow-x: auto;
+}
+
+.strategy-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.strategy-tabs__tab {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--quaternary-2);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    margin-bottom: -1px;
+}
+
+.strategy-tabs__tab:hover {
+    color: var(--white);
+}
+
+.strategy-tabs__tab.is-active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+/* ===== STRATEGY GRID ===== */
+/* 3-column responsive card grid */
+
+.strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ===== STRATEGY CARD ===== */
+
+.strategy-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--primary);
+    border: 1px solid var(--tertiary);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: border-color 0.15s;
+}
+
+.strategy-card:hover {
+    border-color: var(--accent-02);
+}
+
+/* Map badge at the top of the card */
+.strategy-card__map-badge {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-01);
+    border-bottom: 1px solid var(--accent-02);
+}
+
+/* Card body — name + description + players */
+.strategy-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+}
+
+.strategy-card__name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.3;
+}
+
+.strategy-card__desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--quaternary-2);
+    line-height: 1.55;
+    /* Clamp to 3 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Players section */
+.strategy-card__players-label {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.strategy-card__players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+/* Player nickname chip */
+.player-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--accent-01);
+    color: var(--accent);
+}
+
+.player-chip--empty {
+    background: var(--quaternary-2-01);
+    color: var(--quaternary-2);
+    border-color: var(--tertiary);
+}
+
+/* Divider between body and footer */
+.strategy-card__divider {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--tertiary);
+}
+
+/* Card footer — timestamp + link */
+.strategy-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.875rem 1.25rem;
+}
+
+.strategy-card__updated {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.78rem;
+    color: var(--quaternary-2);
+}
+
+.strategy-card__link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+
+.strategy-card__link:hover {
+    opacity: 0.75;
+}
+
+/* ===== EMPTY / ERROR STATES ===== */
+
+.loading-state,
+.empty-state,
+.error-state {
+    padding: 3rem 0;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--quaternary-2);
+}
+
+.error-state {
+    color: var(--danger);
+}
+
+/* ===== PAGINATION ===== */
+/* Reuses .pagination-wrapper and .btn-page from main.css */
+/* Standalone below the grid — no table border needed */
+
+.strategies-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    font-size: 0.85rem;
+    color: var(--quaternary-2);
+}
+
+/* ===== ADD STRATEGY MODAL ===== */
+/* Reuses dialog.modal, .modal__header/body/footer/actions from main.css */
+/* Only unique elements are styled here */
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Input inside modal — slightly smaller than auth inputs */
+.form-field input {
+    padding: 0 0.875rem;
+    box-sizing: border-box;
+}
+
+/* Strategy type segmented selector */
+.type-selector {
+    display: flex;
+    border: 1px solid var(--tertiary);
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.type-selector__option {
+    flex: 1;
+    padding: 0.625rem 0.75rem;
+    border: none;
+    border-right: 1px solid var(--tertiary);
+    background: transparent;
+    color: var(--quaternary-2);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+}
+
+.type-selector__option:last-child {
+    border-right: none;
+}
+
+.type-selector__option:hover {
+    background: var(--tertiary);
+    color: var(--white);
+}
+
+.type-selector__option.is-active {
+    background: var(--accent);
+    color: var(--black);
+    font-weight: 700;
+}
+
+/* Player tag input — selected player chips + Add Player button row */
+.player-tag-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--tertiary);
+    border-radius: 0.75rem;
+    background: var(--black);
+    position: relative;
+}
+
+/* Selected player tag chip with remove button */
+.player-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.2rem 0.5rem 0.2rem 0.625rem;
+    border-radius: 999px;
+    background: var(--accent-01);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.player-tag__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.player-tag__remove:hover {
+    opacity: 1;
+}
+
+/* Add player trigger button — dashed outline style */
+.btn-add-player-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px dashed var(--quaternary);
+    background: transparent;
+    color: var(--quaternary-2);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-add-player-tag:hover {
+    border-color: var(--white);
+    color: var(--white);
+}
+
+/* Dropdown list of available players */
+.player-tag-input__dropdown-wrap {
+    position: relative;
+}
+
+.player-tag-input__dropdown {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    left: 0;
+    z-index: 50;
+    min-width: 12rem;
+    background: var(--primary);
+    border: 1px solid var(--tertiary);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-option {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: none;
+    background: transparent;
+    color: var(--white);
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.dropdown-option:hover {
+    background: var(--tertiary);
+}
+
+.dropdown-empty {
+    padding: 0.75rem 0.875rem;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--quaternary-2);
+    text-align: center;
+}
+
+/* Steps input — text field + Add button row above ordered list */
+.steps-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.steps-input__add-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Input inside steps row — no icon padding needed */
+.steps-input__add-row input {
+    flex: 1;
+    padding: 0 1rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.steps-input__add-row .btn-secondary {
+    height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Ordered list of added steps */
+.steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.steps-list__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--secondary-2);
+    border: 1px solid var(--tertiary);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.steps-list__num {
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 1.25rem;
+}
+
+.steps-list__text {
+    flex: 1;
+    color: var(--white);
+    line-height: 1.4;
+}
+
+.steps-list__remove {
+    background: transparent;
+    border: none;
+    color: var(--quaternary);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.steps-list__remove:hover {
+    color: var(--danger);
+}
+
+/* Required field asterisk */
+.required {
+    color: var(--danger);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    .strategies-page {
+        flex-direction: column;
+    }
+
+    .strategies-page__content {
+        padding: calc(3.5rem + 1.25rem) 1rem 1.25rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn-add-strategy {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .strategy-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .strategies-pagination {
+        flex-direction: column;
+    }
+
+    .type-selector {
+        flex-wrap: wrap;
+    }
+
+    .type-selector__option {
+        flex: 1 1 50%;
+        border-bottom: 1px solid var(--tertiary);
+    }
+
+    .type-selector__option:nth-child(3),
+    .type-selector__option:nth-child(4){
+        border-bottom: none;
+    }
+
+    .strategy-card__map-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .type-selector {
+        display: block;
+    }
+    .type-selector__option {
+        width: 100%;
+    }
+    .type-selector__option:nth-child(3) {
+        border-bottom: 1px solid var(--tertiary);
+    }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+    .strategy-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

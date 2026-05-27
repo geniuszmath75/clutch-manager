@@ -30,14 +30,14 @@ const btnNext      = document.getElementById('btn-next')! as HTMLButtonElement;
 /**
  * Renders pagination info text and enables/disables prev/next buttons.
  */
-export function renderPagination(meta: PaginationMeta | null): void {
+export function renderPagination(meta: PaginationMeta | null, description: string): void {
     if (meta === null) {
         paginationEl.hidden = true;
         return;
     }
 
     paginationEl.hidden = false;
-    paginInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} players)`;
+    paginInfo.textContent = `Showing ${meta.page} of ${meta.totalPages} (${meta.total} ${description})`;
     btnPrev.disabled = meta.page <= 1;
     btnNext.disabled = meta.page >= meta.totalPages;
 }
