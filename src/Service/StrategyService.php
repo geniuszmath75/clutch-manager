@@ -64,6 +64,8 @@ final class StrategyService
 
         $validated = $this->validateData($data);
 
+        // TODO: introduce and handle strategy uniqueness - primary key (name + team_id)
+
         // COACH: team_id forced from session, cannot create for another team
         if (Auth::systemRole() === SystemRole::Coach->value) {
             $validated['team_id'] = Auth::teamId()
@@ -95,6 +97,8 @@ final class StrategyService
         unset($data['team_id']);
 
         $strategyData = $this->validatePartialData($data);
+
+        // TODO: introduce and handle strategy uniqueness - primary key (name + team_id)
 
         return $this->strategyRepository->update($id, $strategyData);
     }

@@ -1,5 +1,6 @@
 import {apiFetch} from "./helpers/fetch-helpers.js";
 import {escapeHtml} from "./helpers/string-helpers.js";
+import { initCustomSelects } from "./helpers/custom-select.js";
 
 export {};
 
@@ -49,7 +50,6 @@ const body = document.body;
 const systemRole = body.dataset['systemRole'] ?? '';
 const strategyId = parseInt(body.dataset['strategyId'] ?? '0', 10);
 
-// All roles can edit; only COACH / ADMIN can delete
 const canEdit = systemRole === 'COACH' || systemRole === 'ADMIN' || systemRole === 'PLAYER';
 const canDelete = systemRole === 'COACH' || systemRole === 'ADMIN';
 const isAdmin = systemRole === 'ADMIN';
@@ -63,92 +63,102 @@ let availablePlayers: StrategyPlayer[] = [];
 let editSelectedPlayerIds: number[] = [];
 let editSteps: string[] = [];
 let editSelectedTypeId: number | null = null;
-
-// ADMIN only: selected team in edit modal
 let editSelectedTeamId: number | null = null;
 let availableTeams: Team[] = [];
-let editTeamSelect: HTMLSelectElement | null = null;
+
+// ADMIN: custom-select hidden input for team (injected once)
+let editTeamInput: HTMLInputElement | null = null;
 
 const TYPE_LABELS: Record<string, string> = {
     ATTACK: 'Attack',
     DEFENSE: 'Defense',
-    ECO: 'Eco Round',
-    DEFAULT: 'Default Setup',
+    ECO: 'Eco',
+    DEFAULT: 'Default',
 };
 
 /**
  * DOM elements
  */
-const loadingEl = document.getElementById('detail-loading')!;
-const contentEl = document.getElementById('detail-content')!;
-const detailError = document.getElementById('detail-error')!;
-const mapBadge = document.getElementById('detail-map-badge')!;
-const typeBadge = document.getElementById('detail-type-badge')!;
-const nameEl = document.getElementById('detail-name')!;
+const loadingEl      = document.getElementById('detail-loading')!;
+const contentEl      = document.getElementById('detail-content')!;
+const detailError    = document.getElementById('detail-error')!;
+const mapBadge       = document.getElementById('detail-map-badge')!;
+const typeBadge      = document.getElementById('detail-type-badge')!;
+const nameEl         = document.getElementById('detail-name')!;
 const playersCountEl = document.getElementById('detail-players-count')!;
-const playersListEl = document.getElementById('detail-players-list')!;
-const descriptionEl = document.getElementById('detail-description')!;
-const stepsListEl = document.getElementById('detail-steps-list')!;
+const playersListEl  = document.getElementById('detail-players-list')!;
+const descriptionEl  = document.getElementById('detail-description')!;
+const stepsListEl    = document.getElementById('detail-steps-list')!;
 
 // Edit strategy modal
-const modalEdit = document.getElementById('modal-edit')! as HTMLDialogElement;
-const btnEdit = document.getElementById('btn-edit-strategy') as HTMLButtonElement;
-const btnEditClose = document.getElementById('modal-edit-close')! as HTMLButtonElement;
-const btnEditCancel = document.getElementById('btn-edit-cancel')! as HTMLButtonElement;
-const btnEditSave = document.getElementById('btn-edit-save')! as HTMLButtonElement;
-const editName = document.getElementById('edit-name')! as HTMLInputElement;
-const editMap = document.getElementById('edit-map')! as HTMLSelectElement;
-const editDesc = document.getElementById('edit-description')! as HTMLTextAreaElement;
-const editError = document.getElementById('edit-error')!;
-const editTagsList = document.getElementById('edit-tags-list')!;
-const editDropdown = document.getElementById('edit-player-dropdown')! as HTMLDivElement;
-const btnEditPlayer = document.getElementById('btn-edit-add-player-tag')! as HTMLButtonElement;
-const editStepInput = document.getElementById('edit-step-input')! as HTMLInputElement;
-const btnEditStep = document.getElementById('btn-edit-add-step')! as HTMLButtonElement;
-const editStepsListEl = document.getElementById('edit-steps-list')!;
+const modalEdit      = document.getElementById('modal-edit')!       as HTMLDialogElement;
+const btnEdit        = document.getElementById('btn-edit-strategy') as HTMLButtonElement | null;
+const btnEditClose   = document.getElementById('modal-edit-close')  as HTMLButtonElement;
+const btnEditCancel  = document.getElementById('btn-edit-cancel')   as HTMLButtonElement;
+const btnEditSave    = document.getElementById('btn-edit-save')     as HTMLButtonElement;
+const editName       = document.getElementById('edit-name')         as HTMLInputElement;
+const editMapInput   = document.getElementById('edit-map')          as HTMLInputElement;  // hidden
+const editMapDropdown= document.getElementById('edit-map-dropdown') as HTMLElement;
+const editMapTrigger = document.getElementById('edit-map-trigger')  as HTMLButtonElement;
+const editDesc       = document.getElementById('edit-description')  as HTMLTextAreaElement;
+const editError      = document.getElementById('edit-error')!;
+const editTagsList   = document.getElementById('edit-tags-list')!;
+const editDropdown   = document.getElementById('edit-player-dropdown') as HTMLDivElement;
+const btnEditPlayer  = document.getElementById('btn-edit-add-player-tag') as HTMLButtonElement;
+const editStepInput  = document.getElementById('edit-step-input')   as HTMLInputElement;
+const btnEditStep    = document.getElementById('btn-edit-add-step') as HTMLButtonElement;
+const editStepsListEl= document.getElementById('edit-steps-list')!;
 const editTypeSelector = document.getElementById('edit-type-selector')!;
 
 // Delete strategy modal
-const modalDelete = document.getElementById('modal-delete') as HTMLDialogElement;
-const btnDelete = document.getElementById('btn-delete-strategy') as HTMLButtonElement;
-const btnDeleteClose = document.getElementById('modal-delete-close') as HTMLButtonElement;
-const btnDeleteCancel = document.getElementById('btn-delete-cancel') as HTMLButtonElement;
-const btnDeleteConfirm = document.getElementById('btn-delete-confirm') as HTMLButtonElement;
-const deleteNameEl = document.getElementById('modal-delete-name')!;
-const deleteError = document.getElementById('delete-error');
+const modalDelete      = document.getElementById('modal-delete')      as HTMLDialogElement | null;
+const btnDelete        = document.getElementById('btn-delete-strategy') as HTMLButtonElement | null;
+const btnDeleteClose   = document.getElementById('modal-delete-close') as HTMLButtonElement | null;
+const btnDeleteCancel  = document.getElementById('btn-delete-cancel')  as HTMLButtonElement | null;
+const btnDeleteConfirm = document.getElementById('btn-delete-confirm') as HTMLButtonElement | null;
+const deleteNameEl     = document.getElementById('modal-delete-name')!;
+const deleteError      = document.getElementById('delete-error');
 
 /**
  * API - strategy details
  */
 async function fetchStrategy(): Promise<void> {
-    const res = await apiFetch<Strategy>(`/strategies/${strategyId}`);
+    try {
+        const res = await apiFetch<Strategy>(`/strategies/${strategyId}`);
 
-    if (!res.success || !res.data) {
-        showDetailError(res.errorMessage ?? 'Strategy not found.');
-        return;
+        if (!res.success || !res.data) {
+            showDetailError(res.errorMessage ?? 'Strategy not found.');
+            return;
+        }
+
+        currentStrategy = res.data;
+        renderDetail(currentStrategy);
+    } catch {
+        showDetailError('Server connection error.');
     }
-
-    currentStrategy = res.data;
-    renderDetail(currentStrategy);
 }
 
 /**
- * API - fetch dictionaries for edit modal (maps + strategy types)
+ * API - fetch dictionaries for edit modal
  */
 async function fetchDictionaries(): Promise<void> {
-    const [mapsRes, typesRes] = await Promise.all([
-        apiFetch<DictEntry[]>('/game-maps'),
-        apiFetch<DictEntry[]>('/strategy-types'),
-    ]);
+    try {
+        const [mapsRes, typesRes] = await Promise.all([
+            apiFetch<DictEntry[]>('/game-maps'),
+            apiFetch<DictEntry[]>('/strategy-types'),
+        ]);
 
-    if (mapsRes.success && mapsRes.data) availableMaps = mapsRes.data;
-    if (typesRes.success && typesRes.data) availableStrategyTypes = typesRes.data;
+
+        if (mapsRes.success && mapsRes.data) availableMaps = mapsRes.data;
+        if (typesRes.success && typesRes.data) availableStrategyTypes = typesRes.data;
+    } catch {
+        showFormError(editError, "Failed to load game maps and strategy types");
+    }
+
 }
 
 /**
  * API - load players for edit modal
- * COACH/PLAYER: own team (no param needed - API scopes by session)
- * ADMIN: for a specific team
  */
 async function loadPlayersForEdit(teamId?: number): Promise<void> {
     availablePlayers = [];
@@ -159,8 +169,14 @@ async function loadPlayersForEdit(teamId?: number): Promise<void> {
         ? `/players?status=active&team_id=${teamId}`
         : '/players?status=active';
 
-    const res = await apiFetch<StrategyPlayer[]>(url);
-    if (res.success && res.data) availablePlayers = res.data;
+    try {
+        const res = await apiFetch<StrategyPlayer[]>(url);
+        if (res.success && res.data) availablePlayers = res.data;
+    } catch {
+        showFormError(editError, "Failed to load players list");
+    }
+
+
 }
 
 /**
@@ -168,8 +184,14 @@ async function loadPlayersForEdit(teamId?: number): Promise<void> {
  */
 async function loadTeams(): Promise<void> {
     if (availableTeams.length > 0) return;
-    const res = await apiFetch<Team[]>('/teams');
-    if (res.success && res.data) availableTeams = res.data;
+
+    try {
+        const res = await apiFetch<Team[]>('/teams');
+        if (res.success && res.data) availableTeams = res.data;
+    } catch {
+        showFormError(editError, "Failed to load team list");
+    }
+
 }
 
 /**
@@ -199,26 +221,24 @@ async function deleteStrategy(): Promise<void> {
  * Render
  */
 function renderDetail(s: Strategy): void {
-    loadingEl.hidden = true;
-    contentEl.hidden = false;
+    loadingEl.hidden  = true;
+    contentEl.hidden  = false;
     detailError.hidden = true;
 
-    // Badges
-    mapBadge.textContent = escapeHtml(s.mapIdent);
-    typeBadge.textContent = escapeHtml(TYPE_LABELS[s.strategyTypeIdent] ?? s.strategyTypeIdent);
+    // Badges — keep icon, append text node after it
+    mapBadge.innerHTML  = `<i class="fa-solid fa-map" style="font-size:0.65rem"></i> ${escapeHtml(s.mapIdent)}`;
+    typeBadge.innerHTML = `<i class="fa-solid fa-crosshairs" style="font-size:0.65rem"></i> ${escapeHtml(TYPE_LABELS[s.strategyTypeIdent] ?? s.strategyTypeIdent)}`;
 
     // Title
     nameEl.textContent = escapeHtml(s.name);
 
     // Card 1 — Players
     playersCountEl.textContent = `${s.players.length}/5`;
-    playersListEl.innerHTML = s.players.length > 0
+    playersListEl.innerHTML    = s.players.length > 0
         ? s.players.map(p => `
             <li class="players-list__item">
                 <span class="players-list__nickname">${escapeHtml(p.nickname)}</span>
-                ${p.teamRole
-            ? `<span class="badge badge--role">${escapeHtml(p.teamRole)}</span>`
-            : ''}
+                ${p.teamRole ? `<span class="badge badge--role">${escapeHtml(p.teamRole)}</span>` : ''}
             </li>
           `).join('')
         : '<li class="players-list__item players-list__item--empty">No players assigned</li>';
@@ -229,8 +249,9 @@ function renderDetail(s: Strategy): void {
     // Card 3 — Steps
     const sorted = [...s.stepsToDo].sort((a, b) => a.order - b.order);
     stepsListEl.innerHTML = sorted.length > 0
-        ? sorted.map(step => `
+        ? sorted.map((step, i) => `
             <li class="steps-list__item">
+                <span class="steps-list__num">${i + 1}.</span>
                 <span class="steps-list__text">${escapeHtml(step.description)}</span>
             </li>
           `).join('')
@@ -247,10 +268,12 @@ function renderEditTags(): void {
             ?? currentStrategy?.players.find(pl => pl.id === id);
         if (!p) return '';
         return `<span class="player-tag">
-            ${escapeHtml(p.nickname)}
-            <button type="button" class="player-tag__remove" data-id="${p.id}"
-                    aria-label="Remove ${escapeHtml(p.nickname)}">&times;</button>
-        </span>`;
+                    ${escapeHtml(p.nickname)}
+                    <button type="button" class="player-tag__remove" data-id="${p.id}"
+                            aria-label="Remove ${escapeHtml(p.nickname)}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </span>`;
     }).join('');
 
     editTagsList.querySelectorAll<HTMLButtonElement>('.player-tag__remove').forEach(btn => {
@@ -295,8 +318,9 @@ function renderEditStepsList(): void {
         <li class="steps-list__item">
             <span class="steps-list__num">${i + 1}.</span>
             <span class="steps-list__text">${escapeHtml(s)}</span>
-            <button type="button" class="steps-list__remove" data-index="${i}"
-                    aria-label="Remove step">&times;</button>
+            <button type="button" class="steps-list__remove" data-index="${i}" aria-label="Remove step">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </li>
     `).join('');
 
@@ -310,33 +334,38 @@ function renderEditStepsList(): void {
 }
 
 /**
- * MODAL
+ * Populate map custom-select and pre-select current map
  */
+function populateEditMapSelect(selectedMapId: number): void {
+    editMapDropdown.innerHTML = availableMaps.map(m =>
+        `<button type="button" class="custom-select__option" data-value="${m.id}">
+            ${escapeHtml(m.ident.charAt(0) + m.ident.slice(1).toLowerCase())}
+        </button>`
+    ).join('');
 
-/**
- * Edit modal - populate map select
- */
-function populateEditMapSelect(): void {
-    editMap.innerHTML = '<option value="">Select map...</option>';
-    availableMaps.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = String(m.id);
-        opt.textContent = m.ident.charAt(0) + m.ident.slice(1).toLowerCase();
-        editMap.appendChild(opt);
-    });
+    const selected = availableMaps.find(m => m.id === selectedMapId);
+    if (selected && editMapTrigger.firstChild) {
+        editMapTrigger.firstChild.textContent = escapeHtml(
+            selected.ident.charAt(0) + selected.ident.slice(1).toLowerCase()
+        );
+        editMapInput.value = String(selected.id);
+    }
+
+    // Re-init so injected options get listeners
+    initCustomSelects(modalEdit);
 }
 
 /**
- * Edit modal - populate type selector
+ * Populate type selector and mark current type active
  */
-function populateEditTypeSelector(): void {
+function populateEditTypeSelector(selectedTypeId: number): void {
     editTypeSelector.innerHTML = availableStrategyTypes.map(t =>
         `<button type="button"
-                 class="type-selector__option"
+                 class="type-selector__option${t.id === selectedTypeId ? ' is-active' : ''}"
                  data-type-id="${t.id}"
-                 aria-pressed="false">
+                 aria-pressed="${t.id === selectedTypeId ? 'true' : 'false'}">
             ${escapeHtml(TYPE_LABELS[t.ident] ?? t.ident)}
-         </button>`
+        </button>`
     ).join('');
 
     editTypeSelector.addEventListener('click', (e) => {
@@ -353,99 +382,99 @@ function populateEditTypeSelector(): void {
 }
 
 /**
- * Edit modal step handler
- */
-function handleEditStep(): void {
-    const val = editStepInput.value.trim();
-    if (!val) return;
-    editSteps.push(val);
-    editStepInput.value = '';
-    renderEditStepsList();
-}
-
-/**
- * ADMIN — inject team selector into edit modal (once) and wire player reload
+ * ADMIN — inject team custom-select into edit modal (once) and wire player reload
  */
 function ensureAdminEditTeamSelector(strategy: Strategy): void {
-    if (editTeamSelect) {
-        // Already injected — just update value and reset players
-        editTeamSelect.value = String(strategy.teamId);
-        editSelectedTeamId = strategy.teamId;
-        return;
+    if (!editTeamInput) {
+        // First call — build custom-select and insert before player field
+        const playerField = document.getElementById('edit-player-field');
+        if (!playerField) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-field';
+        wrapper.id = 'edit-team-field';
+        wrapper.innerHTML = `
+            <label class="form-field__label">Team <span class="required">*</span></label>
+            <div class="custom-select" id="edit-team-select">
+                <input type="hidden" id="edit-team" name="team_id">
+                <button type="button" id="edit-team-trigger" class="custom-select__trigger" aria-expanded="false">
+                    Select team…
+                    <span class="custom-select__arrow">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </span>
+                </button>
+                <div id="edit-team-dropdown" class="custom-select__dropdown">
+                    ${availableTeams.map(t =>
+            `<button type="button" class="custom-select__option" data-value="${t.id}">${escapeHtml(t.name)}</button>`
+        ).join('')}
+                </div>
+            </div>
+        `;
+
+        playerField.parentElement!.insertBefore(wrapper, playerField);
+        editTeamInput = wrapper.querySelector<HTMLInputElement>('#edit-team')!;
+
+        // Listen for change dispatched by custom-select.ts
+        editTeamInput.addEventListener('change', async () => {
+            const teamId = parseInt(editTeamInput!.value, 10);
+            if (!teamId) {
+                availablePlayers    = [];
+                editSelectedPlayerIds = [];
+                renderEditTags();
+                editSelectedTeamId = null;
+                return;
+            }
+            editSelectedTeamId = teamId;
+            await loadPlayersForEdit(teamId);
+        });
+
+        initCustomSelects(modalEdit);
     }
 
-    const playerRow = editTagsList.closest('.form-field');
-    if (!playerRow) return;
+    // Update selected value and trigger label to match current strategy's team
+    const currentTeam = availableTeams.find(t => t.id === strategy.teamId);
+    editTeamInput.value = String(strategy.teamId);
+    editSelectedTeamId  = strategy.teamId;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'form-field';
-    wrapper.id = 'edit-team-field';
-    wrapper.innerHTML = `
-        <label class="form-label" for="edit-team">Team <span class="required">*</span></label>
-        <select class="form-select" id="edit-team">
-            <option value="">Select team…</option>
-            ${availableTeams.map(t =>
-        `<option value="${t.id}">${escapeHtml(t.name)}</option>`
-    ).join('')}
-        </select>
-    `;
-
-    playerRow.parentElement!.insertBefore(wrapper, playerRow);
-    editTeamSelect = wrapper.querySelector<HTMLSelectElement>('#edit-team')!;
-
-    editTeamSelect.addEventListener('change', async () => {
-        const teamId = parseInt(editTeamSelect!.value, 10);
-        if (!teamId) {
-            availablePlayers = [];
-            editSelectedPlayerIds = [];
-            renderEditTags();
-            editSelectedTeamId = null;
-            return;
-        }
-        editSelectedTeamId = teamId;
-        await loadPlayersForEdit(teamId);
-    });
+    const trigger = document.getElementById('edit-team-trigger') as HTMLButtonElement | null;
+    if (trigger?.firstChild && currentTeam) {
+        trigger.firstChild.textContent = escapeHtml(currentTeam.name);
+    }
 }
 
 /**
- * Edit modal - prefill all fields from strategy data
+ * MODAL - Edit strategy
+ */
+
+/**
+ * Edit modal - open and prefill
  */
 async function openEditModal(s: Strategy): Promise<void> {
+    hideError(editError);
+
     // Load dictionaries once
     if (availableMaps.length === 0 || availableStrategyTypes.length === 0) {
         await fetchDictionaries();
-        populateEditMapSelect();
-        populateEditTypeSelector();
     }
+
+    // Always re-populate (selected value changes per strategy)
+    populateEditMapSelect(s.mapId);
+    populateEditTypeSelector(s.strategyTypeId);
 
     if (isAdmin) {
         await loadTeams();
         ensureAdminEditTeamSelector(s);
-        // Set current team, then load players for that team
-        editTeamSelect!.value = String(s.teamId);
-        editSelectedTeamId = s.teamId;
         await loadPlayersForEdit(s.teamId);
     } else {
-        // COACH/PLAYER: load own team players once
         if (availablePlayers.length === 0) await loadPlayersForEdit();
     }
 
     // Prefill scalar fields
-    editName.value = s.name;
-    editMap.value = String(s.mapId);
-    editDesc.value = s.description;
-    editError.hidden = true;
-
-    // Type selector
+    editName.value  = s.name;
+    editDesc.value  = s.description;
     editSelectedTypeId = s.strategyTypeId;
-    editTypeSelector.querySelectorAll<HTMLButtonElement>('.type-selector__option').forEach(btn => {
-        const isActive = parseInt(btn.dataset['typeId'] ?? '0', 10) === s.strategyTypeId;
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        btn.classList.toggle('is-active', isActive);
-    });
 
-    // Players — keep current strategy's players selected even if they aren't
-    // in the freshly loaded list (e.g. deactivated between sessions)
+    // Players — keep current strategy's players selected
     editSelectedPlayerIds = s.players.map(p => p.id);
     renderEditTags();
 
@@ -458,18 +487,29 @@ async function openEditModal(s: Strategy): Promise<void> {
     modalEdit.showModal();
 }
 
+/**
+ * Edit modal step handler
+ */
+function handleEditStep(): void {
+    const val = editStepInput.value.trim();
+    if (!val) return;
+    editSteps.push(val);
+    editStepInput.value = '';
+    renderEditStepsList();
+}
+
 const closeEditModal = () => modalEdit.close();
 
 /**
  * MODAL - Delete Strategy (COACH / ADMIN only)
  */
-const closeDeleteModal = () => modalDelete.close();
+const closeDeleteModal = () => modalDelete?.close();
 
 /**
  * Event listeners
  */
 
-// Edit modal internals
+// Edit modal - always-present elements (modal always in DOM)
 btnEditStep.addEventListener('click', handleEditStep);
 editStepInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -505,8 +545,8 @@ modalEdit.addEventListener('click', (e) => {
 btnEditSave.addEventListener('click', async () => {
     hideError(editError);
 
-    const name = editName.value.trim();
-    const mapId = parseInt(editMap.value, 10);
+    const name  = editName.value.trim();
+    const mapId = parseInt(editMapInput.value, 10);
 
     if (!name) {
         showFormError(editError, 'Strategy name is required.');
@@ -554,19 +594,19 @@ if (canEdit && btnEdit) {
 // Delete modal
 if (canDelete && modalDelete && btnDelete) {
     btnDelete.addEventListener('click', () => {
+        deleteNameEl.textContent = currentStrategy?.name ?? '';
         modalDelete.showModal();
-        modalDelete.hidden = false;
-        deleteNameEl.textContent = currentStrategy ? currentStrategy.name : "";
     });
-    btnDeleteClose.addEventListener('click', closeDeleteModal);
-    btnDeleteCancel.addEventListener('click', closeDeleteModal);
+    btnDeleteClose?.addEventListener('click', closeDeleteModal);
+    btnDeleteCancel?.addEventListener('click', closeDeleteModal);
     modalDelete.addEventListener('click', (e) => {
         if (e.target === modalDelete) closeDeleteModal();
     });
 
-    btnDeleteConfirm.addEventListener('click', async () => {
+    btnDeleteConfirm?.addEventListener('click', async () => {
         if (deleteError) hideError(deleteError);
-        btnDeleteConfirm.disabled = true;
+        if (btnDeleteConfirm) btnDeleteConfirm.disabled = true;
+
         try {
             await deleteStrategy();
             window.location.href = '/dashboard/strategies';
