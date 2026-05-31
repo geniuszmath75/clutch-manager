@@ -637,10 +637,8 @@ if (canWrite && modalAdd && btnOpenAdd && btnAddClose && btnAddCancel && btnAddS
  */
 function showLoading(): void {
     loadingState.hidden = false;
-    // loadingState.classList.remove("state-loading--hidden");
     errorState.hidden = true;
     emptyState.hidden = true;
-    // errorState.classList.add("state-error--hidden");
     grid.innerHTML = '';
 }
 

@@ -1,0 +1,245 @@
+@import "main.css";
+@import "sidebar-nav.css";
+
+/* ===== PAGE LAYOUT ===== */
+
+.settings-page {
+    display: flex;
+    min-height: 100vh;
+    background: var(--secondary-2);
+}
+
+.settings-page__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 2.5rem;
+    overflow-y: auto;
+}
+
+/* ===== PAGE HEADER ===== */
+/* Reuses .page-header__title / __subtitle pattern from main.css */
+
+.settings-header {
+    margin-bottom: 2rem;
+}
+
+.settings-header__title {
+    margin: 0 0 0.375rem;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--white);
+}
+
+.settings-header__subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--quaternary-2);
+}
+
+/* ===== SETTINGS CARDS STACK ===== */
+/* Vertical list of cards — one per settings section */
+
+.settings-main {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+/* ===== SETTINGS CARD ===== */
+
+.settings-card {
+    background: var(--primary);
+    border: 1px solid var(--tertiary);
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.settings-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--tertiary);
+}
+
+.settings-card__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+/* Edit toggle button — secondary outline style */
+.settings-card__edit-btn {
+    /* Inherits .btn-secondary from main.css, but slimmer */
+    height: 2rem;
+    padding: 0 0.875rem;
+    font-size: 0.8rem;
+}
+
+/* ===== SETTINGS FORM ===== */
+
+.settings-form {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* 2-column grid for Nickname + Email side by side */
+.settings-form__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.form-field {
+    flex: 25%;
+}
+
+/* Reuses .form-field + .form-field__label from main.css */
+/* Override input height for settings context — same as modal inputs */
+.settings-form .form-field input,
+.settings-form .form-field select {
+    height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+/* Disabled state — visually dimmed, not interactive */
+.settings-form .form-field input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--secondary-2);
+}
+
+/* custom-select inside settings form inherits same height */
+.settings-form .custom-select__trigger {
+    height: 2.75rem;
+    border-radius: 0.5rem;
+}
+
+/* ===== FEEDBACK MESSAGES ===== */
+/* Inline success / error paragraphs below form fields */
+
+.form-success {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+
+.form-error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--danger);
+}
+
+/* ===== CARD ACTION BUTTONS ===== */
+/* Cancel + Save row at the bottom of each card form */
+
+.settings-card__actions {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+}
+
+.settings-card__actions--hidden,
+.settings-card__edit-btn--hidden {
+    display: none;
+}
+
+/* Both buttons fill equal width */
+.settings-card__actions .btn-secondary,
+.settings-card__actions .btn-accent {
+    flex: 1;
+}
+
+/* ===== TEAM SECTION ===== */
+/* Team management card body */
+
+.settings-team {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.settings-team .settings-form {
+    padding: 0;
+}
+
+.settings-team__info {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--quaternary-2);
+    line-height: 1.55;
+}
+
+.settings-team__info--empty {
+    color: var(--quaternary);
+    font-style: italic;
+}
+
+.settings-team__name {
+    color: var(--white);
+    font-weight: 700;
+}
+
+/* Create team form uses same .settings-form layout */
+.settings-form--inline .settings-card__actions {
+    justify-content: flex-end;
+}
+
+.settings-form--inline .settings-card__actions .btn-accent {
+    flex: 0 1 auto;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1024px) {
+    .form-field {
+        flex: 50%;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-page {
+        flex-direction: column;
+    }
+
+    .settings-page__content {
+        padding: calc(3.5rem + 1.25rem) 1rem 1.25rem;
+    }
+
+    .settings-main:last-child {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-form__row {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-card__actions {
+        flex-direction: column;
+    }
+
+    .settings-card__actions .btn-secondary,
+    .settings-card__actions .btn-accent {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-main {
+        grid-template-columns: 1fr;
+    }
+}
