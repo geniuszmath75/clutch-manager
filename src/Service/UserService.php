@@ -40,8 +40,8 @@ final class UserService
         }
 
         if ($nickname !== null) {
-            if (mb_strlen($nickname) < 2 || mb_strlen($nickname) > 50) {
-                throw new InvalidArgumentException('Nickname must be between 2 and 50 characters.', 400);
+            if (mb_strlen($nickname) < 3 || mb_strlen($nickname) > 100) {
+                throw new InvalidArgumentException('Nickname must be between 3 and 100 characters.', 400);
             }
             if ($this->userRepository->nicknameExists($nickname)) {
                 throw new InvalidArgumentException('Nickname is already taken.', 409);
@@ -95,7 +95,7 @@ final class UserService
             'id'       => $user->id,
             'nickname' => $user->nickname,
             'email'    => $user->email,
-            'team_role' => $user->teamRole,
+            'teamRole' => $user->teamRole,
         ];
     }
 
