@@ -40,6 +40,16 @@ final class DashboardController
         $this->dashboardService = new DashboardService($dashboardRepository);
         $this->teamRoleRepository = new TeamRoleRepository();
     }
+
+    /**
+     * GET /
+     */
+    public function showRedirectedDashboardView(): void
+    {
+        Auth::requireLogin();
+        Response::redirect('/dashboard');
+    }
+
     /**
      * GET /
      * GET /dashboard

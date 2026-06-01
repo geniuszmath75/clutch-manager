@@ -15,7 +15,7 @@ interface ApiResponse<T> {
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
     const res = await fetch(url, {
-        headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
+        headers: {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json', 'Accept': 'application/json'},
         ...options,
     });
     return res.json() as Promise<ApiResponse<T>>;

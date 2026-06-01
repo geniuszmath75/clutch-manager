@@ -59,7 +59,7 @@ $router->post('/auth/register', [Src\Controller\AuthController::class, 'register
 $router->post('/auth/logout', [Src\Controller\AuthController::class, 'logoutUser']);
 
 // --- Dashboard ---
-$router->get('/', [Src\Controller\DashboardController::class, 'showDashboardView']);
+$router->get('/', [Src\Controller\DashboardController::class, 'showRedirectedDashboardView']);
 $router->get('/dashboard', [Src\Controller\DashboardController::class, 'showDashboardView']);
 $router->get('/dashboard/stats', [Src\Controller\DashboardController::class, 'getDashboardStats']);
 $router->get('/dashboard/admin/teams', [Src\Controller\DashboardController::class, 'getAdminTeamStats']);

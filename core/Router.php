@@ -71,15 +71,19 @@ final class Router
                 return;
             }
         }
-        
-        Response::notFound('Route not found.');
+
+        if (self::isAjaxRequest()) {
+            Response::notFound('Route not found.');
+        } else {
+            Response::view('404.php');
+        }
     }
 
     // --- Private helpers ---
     private function add(string $method, string $path, callable|array $handler): void
     {
         if (!in_array($method, self::ALLOWED_METHODS, strict: true)) {
-            throw new InvalidArgumentException("[ERROR]: Unsupported HTTP method: {$method}");
+            throw new InvalidArgumentException("[ERROR]: Unsupported HTTP method: $method");
         }
 
         $this->routes[$method][] = [
@@ -163,13 +167,13 @@ final class Router
             [$class, $method] = $handler;
 
             if (!class_exists($class)) {
-                throw new InvalidArgumentException("[ERROR]: Controller class not found: {$class}");
+                throw new InvalidArgumentException("[ERROR]: Controller class not found: $class");
             }
 
             $controller = new $class();
 
             if (!method_exists($controller, $method)) {
-                throw new InvalidArgumentException("[ERROR]: Method {$method} not found in {$class}.");
+                throw new InvalidArgumentException("[ERROR]: Method $method not found in $class.");
             }
 
             $controller->{$method}(...array_values($params));
@@ -182,5 +186,21 @@ final class Router
         }
 
         throw new InvalidArgumentException("[ERROR]: Invalid route handler.");
+    }
+
+    /**
+     * Determines whether the current request is an AJAX / API call.
+     * Checks the X-Requested-With header (set by apiFetch() in TypeScript)
+     * and the Accept header (application/json preferred by API clients).
+     */
+    private static function isAjaxRequest(): bool
+    {
+        $xRequested = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+        if (strtolower($xRequested) === 'xmlhttprequest') {
+            return true;
+        }
+
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        return str_contains($accept, 'application/json');
     }
 }

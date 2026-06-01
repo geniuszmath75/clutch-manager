@@ -1,0 +1,39 @@
+@import "main.css";
+
+/* Scoped overrides for the error page */
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    background: var(--primary);
+    gap: 4rem;
+}
+
+.error-page__code {
+    font-size: clamp(5rem, 20vw, 10rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+}
+
+.error-page__title {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+
+.error-page__description {
+    color: var(--quaternary-2);
+    max-width: 38ch;
+    margin: 0;
+}
+
+.error-page__back {
+    margin-top: 2rem;
+    text-decoration: none;
+}
