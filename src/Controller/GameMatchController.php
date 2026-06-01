@@ -7,13 +7,12 @@ namespace Src\Controller;
 use Core\Auth;
 use Core\Response;
 use InvalidArgumentException;
-use JsonException;
 use RuntimeException;
 use Src\Repository\GameMatchRepository;
 use Src\Repository\PlayerRepository;
 use Src\Service\GameMatchService;
 
-final class GameMatchController
+final class GameMatchController extends BaseController
 {
     private GameMatchService $matchService;
 
@@ -132,47 +131,5 @@ final class GameMatchController
         } catch (RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
-    }
-
-    /**
-     * HELPERS
-     */
-
-    /**
-     * Parses the request body as JSON.
-     * Supports Content-Type: application/json and application/x-www-form-urlencoded.
-     */
-    private function parseJsonBody(): array
-    {
-        $raw = file_get_contents('php://input');
-
-        if (empty($raw)) {
-            return [];
-        }
-
-        try {
-            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new InvalidArgumentException('Invalid JSON payload.', 400);
-        }
-
-        if (!is_array($data)) {
-            throw new InvalidArgumentException('Payload must be a JSON object.', 400);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Returns error as JSON (for AJAX) or redirect (for HTML).
-     */
-    private function handleError(int $code, string $message): void
-    {
-        if (Auth::isAjaxRequest()) {
-            Response::error($code, $message);
-            return;
-        }
-
-        Response::redirect('/matches?error=' . urlencode($message));
     }
 }

@@ -10,9 +10,8 @@ use Src\Repository\SystemRoleRepository;
 use Src\Repository\TeamRoleRepository;
 use Src\Repository\UserRepository;
 use Src\Service\AuthService;
-use JsonException;
 
-final class AuthController
+final class AuthController extends BaseController
 {
     private AuthService $authService;
     private TeamRoleRepository $teamRoleRepository;
@@ -122,35 +121,5 @@ final class AuthController
     {
         $this->authService->logout();
         Response::redirect('/auth/login');
-    }
-
-    /**
-     * Parses the request body as JSON.
-     * Supports Content-Type: application/json and application/x-www-form-urlencoded.
-     */
-    private function parseJsonBody(): ?array
-    {
-        $raw = file_get_contents('php://input');
-
-        try {
-            $data = json_decode((string) $raw, associative: true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new InvalidArgumentException('Invalid JSON body.', 400);
-        }
-
-        return is_array($data) ? $data : [];
-    }
-
-    /**
-     * Redirects to the given path with an error message,
-     * or returns JSON for AJAX requests.
-     */
-    private function handleError(int $code, string $message): void
-    {
-        Response::json([
-            'success' => false,
-            'statusCode' => $code,
-            'errorMessage' => $message,
-        ], $code);
     }
 }

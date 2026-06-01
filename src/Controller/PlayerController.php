@@ -12,7 +12,7 @@ use Src\Repository\SystemRoleRepository;
 use Src\Repository\TeamRoleRepository;
 use Src\Service\PlayerService;
 
-final class PlayerController
+final class PlayerController extends BaseController
 {
     private PlayerService $playerService;
 
@@ -113,11 +113,6 @@ final class PlayerController
 
         $data = $this->parseJsonBody();
 
-        if ($data === null) {
-            $this->handleError(400, 'Invalid data format (JSON expected)');
-            return;
-        }
-
         // Whitelist fields - only those that can be changed via the API
         $allowed = ['nickname', 'team_role_ident'];
         $filtered = array_intersect_key($data, array_flip($allowed));
@@ -203,7 +198,7 @@ final class PlayerController
 
         $data = $this->parseJsonBody();
 
-        if ($data === null || !isset($data['team_id'])) {
+        if (!isset($data['team_id'])) {
             $this->handleError(400, 'Missing required field: team_id');
             return;
         }
@@ -246,42 +241,5 @@ final class PlayerController
         } catch (InvalidArgumentException|RuntimeException $e) {
             $this->handleError($e->getCode(), $e->getMessage());
         }
-    }
-
-    /**
-     * Helpers
-     */
-
-    /**
-     * Parses the request body as JSON.
-     * Supports Content-Type: application/json and application/x-www-form-urlencoded.
-     */
-    private function parseJsonBody(): ?array
-    {
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-
-        if (str_contains($contentType, 'application/json')) {
-            $raw = file_get_contents('php://input');
-            if ($raw === false || $raw === '') {
-                return [];
-            }
-            $decoded = json_decode($raw, true);
-            return is_array($decoded) ? $decoded : null;
-        }
-
-        return $_POST ?: [];
-    }
-
-    /**
-     * Returns error as JSON (for AJAX) or redirect (for HTML).
-     */
-    private function handleError(int $code, string $message): void
-    {
-        if (Auth::isAjaxRequest()) {
-            Response::error($code, $message);
-            return;
-        }
-
-        Response::redirect('/players?error=' . urlencode($message));
     }
 }

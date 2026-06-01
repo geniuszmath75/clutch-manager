@@ -17,7 +17,7 @@ use Src\Repository\UserRepository;
 use Src\Service\DashboardService;
 use Src\Service\TeamService;
 
-final class DashboardController
+final class DashboardController extends BaseController
 {
     private TeamService $teamService;
     private GameMapRepository $mapRepository;
@@ -244,16 +244,5 @@ final class DashboardController
         Response::view("user-settings.php", [
             'teamRoles' => $teamRoles
         ]);
-    }
-
-    // -------------------------------------------------------------------------
-
-    private function handleError(int $code, string $message): void
-    {
-        Response::json([
-            'success'      => false,
-            'statusCode'   => $code,
-            'errorMessage' => $message,
-        ], $code);
     }
 }
