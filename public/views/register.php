@@ -36,11 +36,13 @@
 
 
         <div class="auth-card">
-            <form action="/auth/register" method="post" class="auth-form">
+            <form id="register-form" class="auth-form" novalidate>
+
+                <div id="register-error" class="modal-error" hidden></div>
 
                 <!-- NICKNAME -->
                 <div class="form-field">
-                    <label for="nickname" class="form-field__label">
+                    <label for="register-nickname" class="form-field__label">
                         Nickname
                     </label>
 
@@ -49,13 +51,13 @@
                             <i class="fa-regular fa-user"></i>
                         </div>
 
-                        <input id="nickname" type="text" name="nickname" placeholder="s1mple" required autofocus>
+                        <input id="register-nickname" type="text" name="nickname" placeholder="s1mple" required autofocus>
                     </div>
                 </div>
 
                 <!-- EMAIL -->
                 <div class="form-field">
-                    <label for="email" class="form-field__label">
+                    <label for="register-email" class="form-field__label">
                         Email Address
                     </label>
 
@@ -64,13 +66,13 @@
                             <i class="fa-regular fa-envelope"></i>
                         </div>
 
-                        <input id="email" type="email" name="email" placeholder="name@example.com" required>
+                        <input id="register-email" type="email" name="email" placeholder="name@example.com" required>
                     </div>
                 </div>
 
                 <!-- PASSWORD -->
                 <div class="form-field">
-                    <label for="password" class="form-field__label">
+                    <label for="register-password" class="form-field__label">
                         Password
                     </label>
 
@@ -79,9 +81,9 @@
                             <i class="fa-solid fa-lock"></i>
                         </div>
 
-                        <input id="password" type="password" name="password" placeholder="********" required autofocus>
+                        <input id="register-password" type="password" name="password" placeholder="********" required autofocus>
 
-                        <button type="button" class="input-action">
+                        <button type="button" class="input-action" id="register-toggle-password" aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
@@ -164,7 +166,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-accent">
+                <button type="submit" id="register-submit" class="btn-accent">
                     <span class="btn-accent__label">Register</span>
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
@@ -186,5 +188,6 @@
 </div>
 
 <script type="module" src="/public/assets/js/helpers/custom-select.js"></script>
+<script type="module" src="/public/assets/js/auth.js"></script>
 </body>
 </html>

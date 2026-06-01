@@ -93,6 +93,7 @@ input::placeholder {
     display: flex;
     align-items: center;
     background: transparent;
+    color: var(--quaternary);
     border: none;
     cursor: pointer;
 }
@@ -513,6 +514,11 @@ dialog.modal::backdrop {
 
 .modal-error {
     color: var(--danger);
+    margin: 0;
+}
+
+.modal-success {
+    color: var(--accent);
     margin: 0;
 }
 

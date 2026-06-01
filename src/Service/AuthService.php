@@ -33,7 +33,7 @@ final class AuthService
         $password = trim($password);
 
         if (empty($email) || empty($password)) {
-            throw new InvalidArgumentException('Email and password are required.');
+            throw new InvalidArgumentException('Email and password are required.', 400);
         }
 
         $user = $this->userRepository->findByEmail($email);
@@ -88,15 +88,15 @@ final class AuthService
 
         $validationError = $this->validateRegistrationInput($nickname, $email, $password, $systemRoleIdent, $teamRoleIdent);
         if (!empty($validationError)) {
-            throw new InvalidArgumentException($validationError);
+            throw new InvalidArgumentException($validationError, 400);
         }
 
         if ($this->userRepository->emailExists($email)) {
-            throw new InvalidArgumentException('Email already exists.');
+            throw new InvalidArgumentException('Email already exists.', 409);
         }
 
         if ($this->userRepository->nicknameExists($nickname)) {
-            throw new InvalidArgumentException('Nickname is already taken.');
+            throw new InvalidArgumentException('Nickname is already taken.', 409);
         }
 
         $systemRoleId = $this->systemRoleRepository->findIdByIdent($systemRoleIdent);

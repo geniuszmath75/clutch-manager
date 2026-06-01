@@ -50,6 +50,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     gap: 2rem;
     z-index: 2;
 }
@@ -141,4 +143,36 @@
     color: var(--accent);
     font-weight: 600;
     text-decoration: none;
+}
+
+@media (max-width: 480px) {
+    .auth-layout {
+        width: 80%;
+        padding: 0 1rem;
+        gap: 1.5rem;
+    }
+
+    .auth-card {
+        width: 100%;
+        padding: 1.5rem;
+    }
+
+    .auth-header__title {
+        font-size: 1.75em;
+    }
+
+    /* Decorative blurs are too large and cause unwanted scroll on narrow screens */
+    .auth-page__blur--top-left {
+        width: 18rem;
+        height: 14rem;
+        top: -4rem;
+        left: -4rem;
+    }
+
+    .auth-page__blur--bottom-right {
+        width: 14rem;
+        height: 10rem;
+        bottom: -4rem;
+        right: -4rem;
+    }
 }

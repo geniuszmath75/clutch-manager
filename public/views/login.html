@@ -36,11 +36,14 @@
 
 
             <div class="auth-card">
-                <form action="/auth/login" method="post" class="auth-form">
+                <form id="login-form" class="auth-form" novalidate>
+
+                    <div id="login-error" class="modal-error" hidden></div>
+                    <div id="login-success" class="modal-success" hidden></div>
 
                     <!-- EMAIL -->
                     <div class="form-field">
-                        <label for="email" class="form-field__label">
+                        <label for="login-email" class="form-field__label">
                             Email Address
                         </label>
 
@@ -49,13 +52,13 @@
                                 <i class="fas fa-envelope"></i>
                             </div>
 
-                            <input id="email" type="email" name="email" placeholder="name@example.com" required autofocus>
+                            <input id="login-email" type="email" name="email" placeholder="name@example.com" required autofocus>
                         </div>
                     </div>
 
                     <!-- PASSWORD -->
                     <div class="form-field">
-                        <label for="password" class="form-field__label">
+                        <label for="login-password" class="form-field__label">
                             Password
                         </label>
 
@@ -64,15 +67,15 @@
                                 <i class="fa-solid fa-lock"></i>
                             </div>
 
-                            <input id="password" type="password" name="password" placeholder="********" required autofocus>
+                            <input id="login-password" type="password" name="password" placeholder="********" required autofocus>
 
-                            <button type="button" class="input-action">
+                            <button type="button" class="input-action" id="login-toggle-password" aria-label="Toggle password visibility">
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-accent">
+                    <button type="submit" id="login-submit" class="btn-accent">
                         <span class="btn-accent__label">Login</span>
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
@@ -93,4 +96,6 @@
         </div>
     </div>
 </body>
+
+<script type="module" src="/public/assets/js/auth.js"></script>
 </html>
