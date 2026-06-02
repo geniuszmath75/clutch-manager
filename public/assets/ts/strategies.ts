@@ -529,17 +529,6 @@ if (canWrite && modalAdd && btnOpenAdd && btnAddClose && btnAddCancel && btnAddS
         }
     });
 
-    // Close player dropdown on outside click
-    document.addEventListener('click', (e) => {
-        if (
-            addDropdown &&
-            !btnAddPlayer.contains(e.target as Node) &&
-            !addDropdown.contains(e.target as Node)
-        ) {
-            addDropdown.hidden = true;
-        }
-    });
-
     // Steps
     btnAddStep.addEventListener('click', handleAddStep);
     addStepInput.addEventListener('keydown', (e) => {
@@ -574,9 +563,6 @@ if (canWrite && modalAdd && btnOpenAdd && btnAddClose && btnAddCancel && btnAddS
     const closeAddModal = () => modalAdd.close();
     btnAddClose.addEventListener('click', closeAddModal);
     btnAddCancel.addEventListener('click', closeAddModal);
-    modalAdd.addEventListener('click', (e) => {
-        if (e.target === modalAdd) closeAddModal();
-    });
 
     // Save
     btnAddSave.addEventListener('click', async () => {

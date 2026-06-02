@@ -527,20 +527,8 @@ btnEditPlayer.addEventListener('click', () => {
     }
 });
 
-document.addEventListener('click', (e) => {
-    if (
-        !btnEditPlayer.contains(e.target as Node) &&
-        !editDropdown.contains(e.target as Node)
-    ) {
-        editDropdown.hidden = true;
-    }
-});
-
 btnEditClose.addEventListener('click', closeEditModal);
 btnEditCancel.addEventListener('click', closeEditModal);
-modalEdit.addEventListener('click', (e) => {
-    if (e.target === modalEdit) closeEditModal();
-});
 
 btnEditSave.addEventListener('click', async () => {
     hideError(editError);
@@ -599,9 +587,6 @@ if (canDelete && modalDelete && btnDelete) {
     });
     btnDeleteClose?.addEventListener('click', closeDeleteModal);
     btnDeleteCancel?.addEventListener('click', closeDeleteModal);
-    modalDelete.addEventListener('click', (e) => {
-        if (e.target === modalDelete) closeDeleteModal();
-    });
 
     btnDeleteConfirm?.addEventListener('click', async () => {
         if (deleteError) hideError(deleteError);

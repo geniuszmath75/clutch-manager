@@ -64,12 +64,15 @@ final class StrategyService
 
         $validated = $this->validateData($data);
 
-        // TODO: introduce and handle strategy uniqueness - primary key (name + team_id)
-
         // COACH: team_id forced from session, cannot create for another team
         if (Auth::systemRole() === SystemRole::Coach->value) {
             $validated['team_id'] = Auth::teamId()
                 ?? throw new InvalidArgumentException('Coach has no team assigned.', 403);
+        }
+
+        $isStrategyExists = $this->strategyRepository->strategyExistsInTeam($validated['team_id'], $validated['name']);
+        if ($isStrategyExists) {
+            throw new InvalidArgumentException('Strategy with the same name already exists in the team.', 409);
         }
 
         return $this->strategyRepository->create($validated);
@@ -98,7 +101,11 @@ final class StrategyService
 
         $strategyData = $this->validatePartialData($data);
 
-        // TODO: introduce and handle strategy uniqueness - primary key (name + team_id)
+        $teamId = Auth::teamId();
+        $isStrategyExists = $this->strategyRepository->strategyExistsInTeam($teamId, $strategyData['name']);
+        if ($isStrategyExists) {
+            throw new InvalidArgumentException('Strategy with the same name already exists in the team.', 409);
+        }
 
         return $this->strategyRepository->update($id, $strategyData);
     }

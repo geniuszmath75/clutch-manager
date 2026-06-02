@@ -49,7 +49,6 @@ final class PlayerController extends BaseController
                 }
 
                 $filters['team_id'] = $teamId;
-                $filters['is_active'] = true;
             }
 
             $roleFilter = isset($_GET['role']) ? strtoupper(trim($_GET['role'])) : null;

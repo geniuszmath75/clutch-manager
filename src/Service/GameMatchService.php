@@ -211,7 +211,7 @@ final class GameMatchService
 
         if ($count < 5) {
             throw new InvalidArgumentException(
-                "Team does not have a full roster ({$count}/5 active players). Add players before recording a match.",
+                "Team does not have a full roster ($count/5 active players). Add players before recording a match.",
                 422
             );
         }
@@ -226,7 +226,7 @@ final class GameMatchService
 
         foreach ($required as $field) {
             if (!isset($data[$field]) || $data[$field] === '') {
-                throw new InvalidArgumentException("Field '{$field}' is required.", 400);
+                throw new InvalidArgumentException("Field '$field' is required.", 400);
             }
         }
 
@@ -279,7 +279,7 @@ final class GameMatchService
         $cleaned = [];
 
         foreach ($rows as $index => $row) {
-            $label = "stats[{$index}]";
+            $label = "stats[$index]";
 
             $playerId = (int)($row['player_id'] ?? 0);
             $killsNumber = (int)($row['kills_number'] ?? 0);
@@ -291,14 +291,14 @@ final class GameMatchService
             $rkastNumber = (int)($row['rkast_number'] ?? 0);
 
             if ($playerId <= 0) {
-                throw new InvalidArgumentException("{$label}: invalid 'player_id' field.", 400);
+                throw new InvalidArgumentException("$label: invalid 'player_id' field.", 400);
             }
             if ($killsNumber < 0 || $deathsNumber < 0 || $assistsNumber < 0
                 || $flashAssistsNumber < 0 || $totalDamage < 0 || $rkastNumber < 0) {
-                throw new InvalidArgumentException("{$label}: numeric values must be non-negative.", 400);
+                throw new InvalidArgumentException("$label: numeric values must be non-negative.", 400);
             }
             if ($hsPercent < 0.0 || $hsPercent > 100.0) {
-                throw new InvalidArgumentException("{$label}: field 'hs_percent' must be 0-100.", 400);
+                throw new InvalidArgumentException("$label: field 'hs_percent' must be 0-100.", 400);
             }
 
             $cleaned[] = [
