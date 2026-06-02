@@ -177,7 +177,7 @@ final class StrategyRepository
     }
 
     /**
-     * WRITE
+     * CREATE
      */
     public function create(array $data): Strategy
     {
@@ -210,6 +210,9 @@ final class StrategyRepository
         });
     }
 
+    /**
+     * UPDATE
+     */
     public function update(int $id, array $data): Strategy
     {
         return Database::getInstance()->transaction(function () use ($id, $data): Strategy {
@@ -263,6 +266,9 @@ final class StrategyRepository
         });
     }
 
+    /**
+     * DELETE
+     */
     public function delete(int $id, int $userId): bool
     {
         $stmt = $this->pdo->prepare("

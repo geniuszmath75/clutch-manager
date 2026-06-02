@@ -49,7 +49,7 @@ final class GameMatchController extends BaseController
                 ]
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ final class GameMatchController extends BaseController
                 'data' => $result,
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -89,7 +89,7 @@ final class GameMatchController extends BaseController
                 'match' => $match
             ], 201);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ final class GameMatchController extends BaseController
                 'match' => $match
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -129,7 +129,7 @@ final class GameMatchController extends BaseController
                 'message' => 'Match deleted successfully'
             ]);
         } catch (RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 }

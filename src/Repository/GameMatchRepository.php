@@ -256,21 +256,34 @@ final class GameMatchRepository
     }
 
     /**
-     * Soft-delete a match (cascades not needed; stats are scoped via match_id + deleted_at).
+     * Soft-delete a match and all its associated player_match_stats atomically.
      */
     public function delete(int $id, int $userId): bool
     {
-        $stmt = $this->pdo->prepare("
-            UPDATE game_matches
-            SET deleted_at = NOW(),
-                updated_at = NOW(),
-                updated_by_user_id = :updated_by_user_id
-            WHERE id = :id
-              AND deleted_at IS NULL"
-        );
-        $stmt->execute([':id' => $id, 'updated_by_user_id' => $userId]);
+        return Database::getInstance()->transaction(function () use ($id, $userId): bool {
+            // First, soft-delete all player_match_stats for this match
+            $stmtStats = $this->pdo->prepare("
+                UPDATE player_match_stats
+                SET deleted_at = NOW(),
+                    updated_at = NOW()
+                WHERE match_id = :match_id
+                  AND deleted_at IS NULL
+            ");
+            $stmtStats->execute([':match_id' => $id]);
 
-        return $stmt->rowCount() === 1;
+            // Then, soft-delete the match itself
+            $stmtMatch = $this->pdo->prepare("
+                UPDATE game_matches
+                SET deleted_at = NOW(),
+                    updated_at = NOW(),
+                    updated_by_user_id = :updated_by_user_id
+                WHERE id = :id
+                  AND deleted_at IS NULL"
+            );
+            $stmtMatch->execute([':id' => $id, ':updated_by_user_id' => $userId]);
+
+            return $stmtMatch->rowCount() === 1;
+        });
     }
 
     /**

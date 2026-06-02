@@ -81,7 +81,7 @@ final class PlayerController extends BaseController
                 ]
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -97,7 +97,7 @@ final class PlayerController extends BaseController
                 'data' => $players,
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -125,7 +125,7 @@ final class PlayerController extends BaseController
                 'data' => $updated,
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -145,7 +145,7 @@ final class PlayerController extends BaseController
                 'message' => 'Player deactivated successfully.'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -165,7 +165,7 @@ final class PlayerController extends BaseController
                 'message' => 'Player activated successfully.'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -183,7 +183,7 @@ final class PlayerController extends BaseController
                 'message' => 'Player deleted successfully.'
             ]);
         } catch (RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -217,7 +217,7 @@ final class PlayerController extends BaseController
                 'message' => 'Player assigned to team successfully.'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -238,7 +238,7 @@ final class PlayerController extends BaseController
                 'message' => 'Player removed from team successfully.'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 }

@@ -17,6 +17,10 @@ abstract class AbstractDictionaryRepository implements DictionaryRepositoryInter
     }
 
     /**
+     * READ
+     */
+
+    /**
      * Name of the dictionary table this repository targets.
      */
     abstract protected function tableName(): string;
@@ -27,7 +31,7 @@ abstract class AbstractDictionaryRepository implements DictionaryRepositoryInter
     public function findAll(): array
     {
         $table = $this->tableName();
-        $stmt = $this->pdo->query("SELECT id, ident FROM {$table} ORDER BY id");
+        $stmt = $this->pdo->query("SELECT id, ident FROM $table ORDER BY id");
 
         return array_map(
             static fn(array $row) => ['id' => (int) $row['id'], 'ident' => $row['ident']],
@@ -41,7 +45,7 @@ abstract class AbstractDictionaryRepository implements DictionaryRepositoryInter
     public function findIdByIdent(string $ident): ?int
     {
         $table = $this->tableName();
-        $stmt = $this->pdo->prepare("SELECT id FROM {$table} WHERE ident = :ident LIMIT 1");
+        $stmt = $this->pdo->prepare("SELECT id FROM $table WHERE ident = :ident LIMIT 1");
         $stmt->execute(['ident' => $ident]);
 
         $result = $stmt->fetchColumn();

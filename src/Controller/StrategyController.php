@@ -49,7 +49,7 @@ final class StrategyController extends BaseController
                 ]
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -68,7 +68,7 @@ final class StrategyController extends BaseController
                 'data' => $result
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -88,7 +88,7 @@ final class StrategyController extends BaseController
                 'strategy' => $strategy
             ], 201);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -109,7 +109,7 @@ final class StrategyController extends BaseController
                 'strategy' => $strategy
             ]);
         } catch (InvalidArgumentException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -128,7 +128,7 @@ final class StrategyController extends BaseController
                 'message' => 'Strategy deleted successfully'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 }

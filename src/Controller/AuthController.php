@@ -79,7 +79,7 @@ final class AuthController extends BaseController
                 'message' => 'Logged in successfully'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -109,7 +109,7 @@ final class AuthController extends BaseController
                 'message' => 'Registered successfully'
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
 
     }

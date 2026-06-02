@@ -54,7 +54,7 @@ final class TeamController extends BaseController
                 'data' => $team
             ], 201);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 }

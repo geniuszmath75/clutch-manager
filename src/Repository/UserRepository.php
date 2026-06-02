@@ -18,6 +18,10 @@ final class UserRepository
     }
 
     /**
+     * READ
+     */
+
+    /**
      * Returns the user by id, or null if it doesn't exist.
      */
     public function findById(int $id): ?User
@@ -95,6 +99,10 @@ final class UserRepository
     }
 
     /**
+     * CREATE
+     */
+
+    /**
      * Creates a new user. Returns the new record ID.
      *
      * system_role_id — retrieved from the system_roles table by the name 'PLAYER'
@@ -118,6 +126,10 @@ final class UserRepository
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * UPDATE
+     */
 
     /**
      * Updates nickname and/or email for a given user.

@@ -83,7 +83,7 @@ final class DashboardController extends BaseController
                 'data' => $stats,
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -111,7 +111,7 @@ final class DashboardController extends BaseController
                 ],
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -139,7 +139,7 @@ final class DashboardController extends BaseController
                 ],
             ]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 

@@ -16,6 +16,10 @@ final class TeamRepository
     }
 
     /**
+     * READ
+     */
+
+    /**
      * Returns all teams
      */
     public function findAll(): array
@@ -79,6 +83,10 @@ final class TeamRepository
 
         return $stmt->fetchColumn() !== false;
     }
+
+    /**
+     * CREATE
+     */
 
     /**
      * Inserts a new team row and returns the created Team model.

@@ -19,6 +19,10 @@ final class DashboardRepository
     }
 
     /**
+     * READ
+     */
+
+    /**
      * Returns aggregated stats for a single PLAYER from v_player_dashboard.
      * Filter is applied on player_id — value comes from session, never from user input.
      */

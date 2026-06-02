@@ -35,7 +35,7 @@ final class UserController extends BaseController
 
             Response::json(['success' => true, 'data' => $result]);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 
@@ -52,7 +52,7 @@ final class UserController extends BaseController
 
             Response::json(['success' => true, 'message' => 'Password updated successfully']);
         } catch (InvalidArgumentException|RuntimeException $e) {
-            $this->handleError($e->getCode(), $e->getMessage());
+            $this->handleError((int)$e->getCode(), $e->getMessage());
         }
     }
 }
