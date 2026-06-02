@@ -6,9 +6,10 @@ $nickname = $_SESSION['user']['nickname'] ?? 'Admin';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/public/assets/img/logo.svg">
     <link rel="stylesheet" href="/public/assets/css/dashboard.css" />
     <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
-    <title>Admin Dashboard – Clutch Manager</title>
 </head>
 <body
         class="admin-dashboard"

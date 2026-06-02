@@ -9,9 +9,10 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matches</title>
+    <link rel="icon" type="image/x-icon" href="/public/assets/img/logo.svg">
     <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="/public/assets/css/matches.css" />
-    <title>Matches</title>
 </head>
 <body
         class="matches-page"
@@ -42,7 +43,7 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
 <nav class="sidebar-nav" id="sidebar-nav" aria-label="Main navigation">
     <a href="/dashboard" class="sidebar-nav__logo">
         <div class="sidebar-nav__logo-icon">
-            <img src="/public/assets/img/logo.svg" alt="Clutch Manager" width="20" height="20">
+            <img src="/public/assets/img/logo.svg" alt="Clutch Manager">
         </div>
         <div class="sidebar-nav__logo-text">
             <span>Clutch</span>

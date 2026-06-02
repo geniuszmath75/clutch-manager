@@ -12,9 +12,10 @@ $teamRole   = $_SESSION['user']['team_role']   ?? null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
+    <title>User Settings</title>
+    <link rel="icon" type="image/x-icon" href="/public/assets/img/logo.svg">
     <link rel="stylesheet" type="text/css" href="/public/assets/css/user-settings.css">
-    <title>User Settings – Clutch Manager</title>
+    <script src="https://kit.fontawesome.com/b36ff3dc2a.js" crossorigin="anonymous"></script>
 </head>
 <body class="settings-page"
     data-system-role="<?= htmlspecialchars($systemRole, ENT_QUOTES) ?>"
@@ -45,7 +46,7 @@ $teamRole   = $_SESSION['user']['team_role']   ?? null;
 <nav class="sidebar-nav" id="sidebar-nav" aria-label="Main navigation">
     <a href="/dashboard" class="sidebar-nav__logo">
         <div class="sidebar-nav__logo-icon">
-            <img src="/public/assets/img/logo.svg" alt="Clutch Manager" width="20" height="20">
+            <img src="/public/assets/img/logo.svg" alt="Clutch Manager">
         </div>
         <div class="sidebar-nav__logo-text">
             <span>Clutch</span>

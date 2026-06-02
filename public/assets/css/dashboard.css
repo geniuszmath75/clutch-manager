@@ -83,6 +83,7 @@
 
 /* ===== TABLES ===== */
 .table-wrapper {
+    background: var(--primary);
     border: 1px solid var(--tertiary);
     border-radius: 0.75rem;
     overflow: hidden;
@@ -92,14 +93,6 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
-}
-
-.data-table tbody {
-    background: var(--primary-2);
-}
-
-.data-table thead {
-    background: var(--tertiary);
 }
 
 .data-table th {
