@@ -6,17 +6,12 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
-use Src\Repository\GameMapRepository;
-use Src\Service\GameMapService;
+use Core\ServiceContainer;
 
 final class GameMapController
 {
-    private GameMapService $mapService;
-
     public function __construct()
     {
-        $mapRepository = new GameMapRepository();
-        $this->mapService = new GameMapService($mapRepository);
     }
 
     /**
@@ -25,7 +20,7 @@ final class GameMapController
     public function getGameMaps(): void
     {
         Auth::requireLogin();
-        $maps = $this->mapService->getAll();
+        $maps = ServiceContainer::getGameMapService()->getAll();
 
         Response::json([
             'success' => true,

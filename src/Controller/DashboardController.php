@@ -4,41 +4,15 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
 use Src\Enum\SystemRole;
-use Src\Repository\DashboardRepository;
-use Src\Repository\GameMapRepository;
-use Src\Repository\GameModeRepository;
-use Src\Repository\StrategyTypeRepository;
-use Src\Repository\TeamRepository;
-use Src\Repository\TeamRoleRepository;
-use Src\Repository\UserRepository;
-use Src\Service\DashboardService;
-use Src\Service\TeamService;
 
 final class DashboardController extends BaseController
 {
-    private TeamService $teamService;
-    private GameMapRepository $mapRepository;
-    private GameModeRepository $gameModeRepository;
-
-    private StrategyTypeRepository $strategyTypeRepository;
-    private TeamRoleRepository $teamRoleRepository;
-    private DashboardService $dashboardService;
-
     public function __construct()
     {
-        $teamRepository = new TeamRepository();
-        $dashboardRepository = new DashboardRepository();
-        $userRepository = new UserRepository();
-
-        $this->teamService = new TeamService($teamRepository, $userRepository);
-        $this->mapRepository = new GameMapRepository();
-        $this->gameModeRepository = new GameModeRepository();
-        $this->strategyTypeRepository = new StrategyTypeRepository();
-        $this->dashboardService = new DashboardService($dashboardRepository);
-        $this->teamRoleRepository = new TeamRoleRepository();
     }
 
     /**
@@ -76,7 +50,7 @@ final class DashboardController extends BaseController
         Auth::requireLogin();
 
         try {
-            $stats = $this->dashboardService->getStats();
+            $stats = ServiceContainer::getDashboardService()->getStats();
 
             Response::json([
                 'success' => true,
@@ -98,7 +72,7 @@ final class DashboardController extends BaseController
             $page = max(1, intval($_GET['page']) ?? 1);
             $pageSize = max(1, min(50, intval($_GET['pageSize']) ?? 5));
 
-            $result = $this->dashboardService->getAdminTeamStats($page, $pageSize);
+            $result = ServiceContainer::getDashboardService()->getAdminTeamStats($page, $pageSize);
 
             Response::json([
                 'success' => true,
@@ -126,7 +100,7 @@ final class DashboardController extends BaseController
             $page     = max(1, intval($_GET['page']) ?? 1);
             $pageSize = max(1, min(50, intval($_GET['pageSize']) ?? 10));
 
-            $result = $this->dashboardService->getAdminAuditLog($page, $pageSize);
+            $result = ServiceContainer::getDashboardService()->getAdminAuditLog($page, $pageSize);
 
             Response::json([
                 'success' => true,
@@ -154,7 +128,7 @@ final class DashboardController extends BaseController
         $sessionRole = Auth::systemRole();
 
         if ($sessionRole === SystemRole::Admin->value) {
-            $teams = $this->teamService->getAll();
+            $teams = ServiceContainer::getTeamService()->getAll();
         }
 
         Response::view('players.php', [
@@ -170,12 +144,12 @@ final class DashboardController extends BaseController
         Auth::requireLogin();
 
         $teams = [];
-        $maps = $this->mapRepository->findAll();
-        $gameModes = $this->gameModeRepository->findAll();
+        $maps = ServiceContainer::getGameMapService()->getAll();
+        $gameModes = ServiceContainer::getGameModeService()->getAll();
         $sessionRole = Auth::systemRole();
 
         if ($sessionRole === SystemRole::Admin->value) {
-            $teams = $this->teamService->getAll();
+            $teams = ServiceContainer::getTeamService()->getAll();
         }
 
         Response::view('matches.php', [
@@ -205,8 +179,8 @@ final class DashboardController extends BaseController
     {
         Auth::requireLogin();
 
-        $maps = $this->mapRepository->findAll();
-        $strategyTypes = $this->strategyTypeRepository->findAll();
+        $maps = ServiceContainer::getGameMapService()->getAll();
+        $strategyTypes = ServiceContainer::getStrategyTypeService()->getAll();
 
         Response::view('strategies.php', [
             'maps' => $maps,
@@ -238,7 +212,7 @@ final class DashboardController extends BaseController
         $teamRoles = [];
 
         if ($systemRole === SystemRole::Player->value) {
-            $teamRoles = $this->teamRoleRepository->findAll();
+            $teamRoles = ServiceContainer::getTeamRoleRepository()->findAll();
         }
 
         Response::view("user-settings.php", [

@@ -4,28 +4,18 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
-use Src\Repository\SystemRoleRepository;
 use Src\Repository\TeamRoleRepository;
-use Src\Repository\UserRepository;
-use Src\Service\AuthService;
 
 final class AuthController extends BaseController
 {
-    private AuthService $authService;
     private TeamRoleRepository $teamRoleRepository;
 
     public function __construct()
     {
-        $this->teamRoleRepository = new TeamRoleRepository();
-        $userRepository = new UserRepository();
-        $systemRoleRepository = new SystemRoleRepository();
-        $this->authService = new AuthService(
-            $userRepository,
-            $systemRoleRepository,
-            $this->teamRoleRepository
-        );
+        $this->teamRoleRepository = ServiceContainer::getTeamRoleRepository();
     }
 
     // -------------------------------------------------------------------------
@@ -72,7 +62,7 @@ final class AuthController extends BaseController
             $email = $body['email'] ?? '';
             $password = $body['password'] ?? '';
 
-            $this->authService->login($email, $password);
+            ServiceContainer::getAuthService()->login($email, $password);
 
             Response::json([
                 'success' => true,
@@ -96,7 +86,7 @@ final class AuthController extends BaseController
             $systemRoleIdent = $body['system_role_ident'] ?? '';
             $teamRoleIdent = $body['team_role_ident'] ?? null;
 
-            $this->authService->register(
+            ServiceContainer::getAuthService()->register(
                 $nickname,
                 $email,
                 $password,
@@ -119,7 +109,7 @@ final class AuthController extends BaseController
      */
     public function logoutUser(): void
     {
-        $this->authService->logout();
+        ServiceContainer::getAuthService()->logout();
         Response::redirect('/auth/login');
     }
 }

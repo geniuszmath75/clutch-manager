@@ -6,22 +6,15 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
 use Src\Enum\SystemRole;
-use Src\Repository\TeamRepository;
-use Src\Repository\UserRepository;
-use Src\Service\TeamService;
 
 final class TeamController extends BaseController
 {
-    private TeamService $teamService;
-
     public function __construct()
     {
-        $teamRepository = new TeamRepository();
-        $userRepository = new UserRepository();
-        $this->teamService = new TeamService($teamRepository, $userRepository);
     }
 
     /**
@@ -30,7 +23,7 @@ final class TeamController extends BaseController
     public function getTeams(): void
     {
         Auth::requireRole([SystemRole::Admin->value]);
-        $teams = $this->teamService->getAll();
+        $teams = ServiceContainer::getTeamService()->getAll();
 
         Response::json([
             'success' => true,
@@ -47,7 +40,7 @@ final class TeamController extends BaseController
 
         try {
             $data = $this->parseJsonBody();
-            $team = $this->teamService->createTeam($data);
+            $team = ServiceContainer::getTeamService()->createTeam($data);
 
             Response::json([
                 'success' => true,

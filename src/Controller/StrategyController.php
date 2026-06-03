@@ -6,23 +6,14 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
-use Src\Repository\PlayerRepository;
-use Src\Repository\StrategyRepository;
-use Src\Service\StrategyService;
 
 final class StrategyController extends BaseController
 {
-    private StrategyService $strategyService;
-
     public function __construct()
     {
-        $playerRepository = new PlayerRepository();
-        $strategyRepository = new StrategyRepository($playerRepository);
-        $this->strategyService = new StrategyService(
-            $strategyRepository,
-        );
     }
 
     /**
@@ -36,7 +27,7 @@ final class StrategyController extends BaseController
             $page = max(1, intval($_GET['page']) ?? 1);
             $pageSize = max(1, min(50, intval($_GET['pageSize']) ?? 5));
 
-            $result = $this->strategyService->getAll($_GET, $page, $pageSize);
+            $result = ServiceContainer::getStrategyService()->getAll($_GET, $page, $pageSize);
 
             Response::json([
                 'success' => true,
@@ -62,7 +53,7 @@ final class StrategyController extends BaseController
         $id = intval($id);
 
         try {
-            $result = $this->strategyService->getById($id);
+            $result = ServiceContainer::getStrategyService()->getById($id);
             Response::json([
                 'success' => true,
                 'data' => $result
@@ -81,7 +72,7 @@ final class StrategyController extends BaseController
 
         try {
             $body = $this->parseJsonBody();
-            $strategy = $this->strategyService->create($body);
+            $strategy = ServiceContainer::getStrategyService()->create($body);
 
             Response::json([
                 'success' => true,
@@ -102,7 +93,7 @@ final class StrategyController extends BaseController
 
         try {
             $body = $this->parseJsonBody();
-            $strategy = $this->strategyService->update($id, $body);
+            $strategy = ServiceContainer::getStrategyService()->update($id, $body);
 
             Response::json([
                 'success' => true,
@@ -122,7 +113,7 @@ final class StrategyController extends BaseController
         $id = intval($id);
 
         try {
-            $this->strategyService->delete($id);
+            ServiceContainer::getStrategyService()->delete($id);
             Response::json([
                 'success' => true,
                 'message' => 'Strategy deleted successfully'

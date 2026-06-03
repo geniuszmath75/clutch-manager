@@ -6,24 +6,14 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
-use Src\Repository\GameMatchRepository;
-use Src\Repository\PlayerRepository;
-use Src\Service\GameMatchService;
 
 final class GameMatchController extends BaseController
 {
-    private GameMatchService $matchService;
-
     public function __construct()
     {
-        $matchRepository = new GameMatchRepository();
-        $playerRepository = new PlayerRepository();
-        $this->matchService = new GameMatchService(
-            $matchRepository,
-            $playerRepository
-        );
     }
 
     /**
@@ -37,7 +27,7 @@ final class GameMatchController extends BaseController
             $page = max(1, intval($_GET['page']));
             $pageSize = min(50, intval($_GET['pageSize']));
 
-            $result = $this->matchService->getAll($_GET, $page, $pageSize);
+            $result = ServiceContainer::getGameMatchService()->getAll($_GET, $page, $pageSize);
             Response::json([
                 'success' => true,
                 'data' => $result['matches'],
@@ -62,7 +52,7 @@ final class GameMatchController extends BaseController
         $id = intval($id);
 
         try {
-            $result = $this->matchService->getById($id);
+            $result = ServiceContainer::getGameMatchService()->getById($id);
 
             Response::json([
                 'success' => true,
@@ -82,7 +72,7 @@ final class GameMatchController extends BaseController
 
         try {
             $body = $this->parseJsonBody();
-            $match = $this->matchService->create($body);
+            $match = ServiceContainer::getGameMatchService()->create($body);
 
             Response::json([
                 'success' => true,
@@ -103,7 +93,7 @@ final class GameMatchController extends BaseController
 
         try {
             $body = $this->parseJsonBody();
-            $match = $this->matchService->update($id, $body);
+            $match = ServiceContainer::getGameMatchService()->update($id, $body);
 
             Response::json([
                 'success' => true,
@@ -123,7 +113,7 @@ final class GameMatchController extends BaseController
         $id = intval($id);
 
         try {
-            $this->matchService->delete($id);
+            ServiceContainer::getGameMatchService()->delete($id);
             Response::json([
                 'success' => true,
                 'message' => 'Match deleted successfully'

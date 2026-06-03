@@ -5,17 +5,12 @@ declare(strict_types=1);
 namespace Src\Controller;
 
 use Core\Response;
-use Src\Repository\GameModeRepository;
-use Src\Service\GameModeService;
+use Core\ServiceContainer;
 
 final class GameModeController
 {
-    private GameModeService $modeService;
-
     public function __construct()
     {
-        $modeRepository = new GameModeRepository();
-        $this->modeService = new GameModeService($modeRepository);
     }
 
     /**
@@ -23,7 +18,7 @@ final class GameModeController
      */
     public function getGameModes(): void
     {
-        $modes = $this->modeService->getAll();
+        $modes = ServiceContainer::getGameModeService()->getAll();
         Response::json([
             'success' => true,
             'data' => $modes

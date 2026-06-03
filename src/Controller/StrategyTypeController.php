@@ -5,17 +5,12 @@ declare(strict_types=1);
 namespace Src\Controller;
 
 use Core\Response;
-use Src\Repository\StrategyTypeRepository;
-use Src\Service\StrategyTypeService;
+use Core\ServiceContainer;
 
 final class StrategyTypeController
 {
-    private StrategyTypeService $strategyTypeService;
-
     public function __construct()
     {
-        $strategyTypeRepository = new StrategyTypeRepository();
-        $this->strategyTypeService = new StrategyTypeService($strategyTypeRepository);
     }
 
     /**
@@ -23,7 +18,7 @@ final class StrategyTypeController
      */
     public function getStrategyTypes(): void
     {
-        $strategyTypes = $this->strategyTypeService->getAll();
+        $strategyTypes = ServiceContainer::getStrategyTypeService()->getAll();
         Response::json([
             'success' => true,
             'data' => $strategyTypes

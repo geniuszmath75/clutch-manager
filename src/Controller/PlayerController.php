@@ -4,28 +4,15 @@ namespace Src\Controller;
 
 use Core\Auth;
 use Core\Response;
+use Core\ServiceContainer;
 use InvalidArgumentException;
 use RuntimeException;
 use Src\Enum\SystemRole;
-use Src\Repository\PlayerRepository;
-use Src\Repository\SystemRoleRepository;
-use Src\Repository\TeamRoleRepository;
-use Src\Service\PlayerService;
 
 final class PlayerController extends BaseController
 {
-    private PlayerService $playerService;
-
     public function __construct()
     {
-        $playerRepository = new PlayerRepository();
-        $teamRoleRepository = new TeamRoleRepository();
-        $systemRoleRepository = new SystemRoleRepository();
-        $this->playerService = new PlayerService(
-            $playerRepository,
-            $teamRoleRepository,
-            $systemRoleRepository
-        );
     }
 
     /**
@@ -68,7 +55,7 @@ final class PlayerController extends BaseController
             $page = max(1, intval($_GET['page'] ?? 1));
             $pageSize = min(50, intval($_GET['pageSize'] ?? 5));
 
-            $result = $this->playerService->getAll($filters, $page, $pageSize);
+            $result = ServiceContainer::getPlayerService()->getAll($filters, $page, $pageSize);
 
             Response::json([
                 'success' => true,
@@ -90,7 +77,7 @@ final class PlayerController extends BaseController
         Auth::requireRole([SystemRole::Admin->value, SystemRole::Coach->value]);
 
         try {
-            $players = $this->playerService->getAvailable();
+            $players = ServiceContainer::getPlayerService()->getAvailable();
 
             Response::json([
                 'success' => true,
@@ -117,7 +104,7 @@ final class PlayerController extends BaseController
         $filtered = array_intersect_key($data, array_flip($allowed));
 
         try {
-            $updated = $this->playerService->update($id, $filtered);
+            $updated = ServiceContainer::getPlayerService()->update($id, $filtered);
 
             Response::json([
                 'success' => true,
@@ -138,7 +125,7 @@ final class PlayerController extends BaseController
         $id = intval($id);
 
         try {
-            $this->playerService->deactivate($id);
+            ServiceContainer::getPlayerService()->deactivate($id);
 
             Response::json([
                 'success' => true,
@@ -158,7 +145,7 @@ final class PlayerController extends BaseController
         $id = intval($id);
 
         try {
-            $this->playerService->activate($id);
+            ServiceContainer::getPlayerService()->activate($id);
 
             Response::json([
                 'success' => true,
@@ -177,7 +164,7 @@ final class PlayerController extends BaseController
         Auth::requireRole(SystemRole::Admin->value);
 
         try {
-            $this->playerService->delete($id);
+            ServiceContainer::getPlayerService()->delete($id);
             Response::json([
                 'success' => true,
                 'message' => 'Player deleted successfully.'
@@ -210,7 +197,7 @@ final class PlayerController extends BaseController
         }
 
         try {
-            $this->playerService->assignToTeam($id, $teamId, Auth::systemRole(), Auth::teamId());
+            ServiceContainer::getPlayerService()->assignToTeam($id, $teamId, Auth::systemRole(), Auth::teamId());
 
             Response::json([
                 'success' => true,
@@ -231,7 +218,7 @@ final class PlayerController extends BaseController
         $id = intval($id);
 
         try {
-            $this->playerService->removeFromTeam($id, Auth::systemRole(), Auth::teamId());
+            ServiceContainer::getPlayerService()->removeFromTeam($id, Auth::systemRole(), Auth::teamId());
 
             Response::json([
                 'success' => true,
