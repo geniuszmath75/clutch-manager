@@ -37,6 +37,10 @@ body {
     gap: 0.5rem;
 }
 
+.form-field__hidden {
+    display: none;
+}
+
 .form-field__label {
     font-size: 0.875em;
 }

@@ -132,7 +132,7 @@
                 </div>
 
                 <!-- TEAM ROLE -->
-                <div class="form-field">
+                <div class="form-field" id="team-role-field">
                     <label for="team_role_ident" class="form-field__label">
                         Team Role
                     </label>

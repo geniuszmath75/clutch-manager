@@ -176,8 +176,15 @@ function togglePasswordVisibility(input: HTMLInputElement, btn: HTMLButtonElemen
 function syncTeamRoleVisibility(): void {
     if (!teamRoleField || !systemRoleInput) return;
 
-    const isPlayer = systemRoleInput.value === 'PLAYER';
+    const isPlayer = systemRoleInput.value !== 'COACH';
+
     teamRoleField.hidden = !isPlayer;
+
+    if (isPlayer) {
+        teamRoleField.classList.remove("form-field__hidden");
+    } else {
+        teamRoleField.classList.add("form-field__hidden");
+    }
 
     // Clear the value when hiding so it doesn't get submitted
     if (!isPlayer && teamRoleInput) {
