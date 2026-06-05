@@ -40,6 +40,7 @@ interface Player {
     id: number;
     nickname: string;
     teamId: number | null;
+    teamRoleIdent: string | null
 }
 
 /**
@@ -74,6 +75,7 @@ const btnSave    = document.getElementById('btn-save-match')   as HTMLButtonElem
 const modalError = document.getElementById('modal-error')!;
 const statsTbody = document.getElementById('stats-tbody')!;
 const teamSelect = document.getElementById('match-team-id')    as HTMLSelectElement  | null;
+const btnGenerate  = document.getElementById('btn-generate-stats') as HTMLButtonElement   | null;
 
 // Modal - match details
 const matchOpponent      = document.getElementById('match-opponent')       as HTMLInputElement;
@@ -178,13 +180,6 @@ async function addMatch(): Promise<void> {
     const gameModeId = parseInt(matchGameMode.value, 10);
 
     if (!opponent || isNaN(teamScore) || isNaN(oppScore) || !mapId || !duration || !playedAt || !gameModeId) {
-        console.log('Opponent: ', opponent);
-        console.log('Team Score: ', teamScore);
-        console.log('Opponent Score: ', oppScore);
-        console.log('Map ID: ', mapId);
-        console.log('Duration: ', duration);
-        console.log('Played At: ', playedAt);
-        console.log('Game Mode ID: ', gameModeId);
         showError(modalError, 'Please fill in all match info fields.');
         return;
     }
@@ -307,9 +302,6 @@ function renderStatsRows(players: Player[], target: HTMLElement): void {
 /**
  * Filters
  */
-// async function onFilterChange(): Promise<void> {
-//     await fetchMatches(1);
-// }
 
 function onOpponentInput(): void {
     if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
@@ -337,6 +329,101 @@ function closeAddMatchModal(): void {
     statsTbody.innerHTML = '<tr><td class="empty-state" colspan="8">Select a team to load players.</td></tr>';
     statsPlayers = [];
     modal.close();
+}
+
+/**
+ * Generate stats - pseudo-random stats based on score diff and player role
+ */
+
+type RoleProfile = {
+    killsBase:   [number, number];   // [min, max] at neutral score
+    deathsBase:  [number, number];
+    assistsBase: [number, number];
+    flashBase:   [number, number];
+    damageBase:  [number, number];
+    hsBase:      [number, number];   // HS% range
+    rkastBase:   [number, number];
+};
+
+const ROLE_PROFILES: Record<string, RoleProfile> = {
+    AWP:     { killsBase: [12, 20], deathsBase: [8,  14], assistsBase: [1, 4],  flashBase: [0, 3],  damageBase: [1400, 2200], hsBase: [10, 25], rkastBase: [0.55, 0.72] },
+    ENTRY:   { killsBase: [14, 22], deathsBase: [14, 20], assistsBase: [1, 5],  flashBase: [0, 3],  damageBase: [1600, 2600], hsBase: [40, 65], rkastBase: [0.52, 0.70] },
+    SUPPORT: { killsBase: [10, 17], deathsBase: [12, 18], assistsBase: [5, 10], flashBase: [8, 15], damageBase: [1100, 1900], hsBase: [25, 45], rkastBase: [0.60, 0.78] },
+    IGL:     { killsBase: [9,  16], deathsBase: [13, 19], assistsBase: [4, 9],  flashBase: [5, 11], damageBase: [900,  1700], hsBase: [20, 38], rkastBase: [0.58, 0.74] },
+    LURKER:  { killsBase: [13, 20], deathsBase: [9,  14], assistsBase: [2, 6],  flashBase: [0, 4],  damageBase: [1300, 2100], hsBase: [30, 52], rkastBase: [0.57, 0.73] },
+};
+
+function rand(min: number, max: number): number {
+    return Math.round(Math.random() * (max - min) + min);
+}
+
+function clamp(val: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, val));
+}
+
+/** Score diff → performance multiplier: +1.0 (neutral) ± up to 0.5 */
+function scoreMult(teamScore: number, oppScore: number): number {
+    const diff = teamScore - oppScore;
+    // Tanh gives smooth curve; scale so ±13 rounds ≈ ±0.45
+    return 1.0 + 0.45 * Math.tanh(diff / 6);
+}
+
+function applyMult(base: [number, number], mult: number): [number, number] {
+    return [
+        Math.round(base[0] * mult),
+        Math.round(base[1] * mult),
+    ];
+}
+
+function generateStats(): void {
+    if (statsPlayers.length === 0) {
+        showError(modalError, 'Load players before generating stats.');
+        return;
+    }
+
+    const teamScore = parseInt(matchTeamScore.value, 10);
+    const oppScore  = parseInt(matchOpponentScore.value, 10);
+
+    if (isNaN(teamScore) || isNaN(oppScore)) {
+        showError(modalError, 'Enter Team Score and Opponent Score first.');
+        return;
+    }
+
+    hideError(modalError);
+
+    const mult = scoreMult(teamScore, oppScore);
+
+    statsPlayers.forEach(p => {
+        const role    = p.teamRoleIdent ?? 'SUPPORT';
+        const profile = ROLE_PROFILES[role] ?? ROLE_PROFILES['SUPPORT'];
+
+        const totalRounds = teamScore + oppScore;
+        const kills   = rand(...applyMult(profile.killsBase,   mult));
+        const deaths  = clamp(rand(...applyMult(profile.deathsBase,  1 / mult)), 0, totalRounds); // inverse: win → fewer deaths; capped at total rounds played
+        const assists = rand(...applyMult(profile.assistsBase, mult));
+        const flash   = rand(...profile.flashBase);                         // role-defined, score-independent
+        const damage  = rand(...applyMult(profile.damageBase,  mult));
+        const hs      = rand(...profile.hsBase);                            // role-defined characteristic
+        // rkast = rounds with kill/assist/survive; ratio * totalRounds, scaled by performance
+        const rkastRatio = profile.rkastBase[0] + Math.random() * (profile.rkastBase[1] - profile.rkastBase[0]);
+        const rkast   = clamp(Math.round(rkastRatio * mult * totalRounds), 0, totalRounds);
+
+        const row = statsTbody.querySelector<HTMLTableRowElement>(`tr[data-player-id="${p.id}"]`);
+        if (!row) return;
+
+        const set = (name: string, val: number) => {
+            const input = row.querySelector<HTMLInputElement>(`[name="${name}"]`);
+            if (input) input.value = String(val);
+        };
+
+        set('kills_number',         kills);
+        set('deaths_number',        deaths);
+        set('assists_number',       assists);
+        set('flash_assists_number', flash);
+        set('total_damage',         damage);
+        set('hs_percent',           hs);
+        set('rkast_number',         rkast);
+    });
 }
 
 function collectStatsRows(target: HTMLElement, players: Player[]): PlayerStats[] {
@@ -378,6 +465,8 @@ if (canWrite && modal && btnOpen && btnClose && btnCancel && btnSave) {
     btnCancel.addEventListener('click', closeAddMatchModal);
     btnSave.addEventListener('click',   addMatch);
 }
+
+btnGenerate?.addEventListener('click', generateStats);
 
 // Pagination buttons wired via shared helper
 bindPaginationButtons(

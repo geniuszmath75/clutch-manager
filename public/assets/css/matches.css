@@ -240,6 +240,11 @@
     color: var(--quaternary-2);
 }
 
+.modal-section__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 /* ===== FORM GRID ===== */
 /* Responsive grid used inside the modal for match info fields */
 
@@ -381,6 +386,11 @@
 
     .matches-table-wrapper::-webkit-scrollbar {
         display: none;
+    }
+
+    .modal-section__actions {
+        flex-direction: column;
+        justify-content: stretch;
     }
 
     .form-grid {

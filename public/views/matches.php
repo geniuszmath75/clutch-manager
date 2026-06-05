@@ -455,6 +455,12 @@ $canWrite = in_array($systemRole, ['COACH', 'ADMIN'], true);
                     </div>
                 </section>
 
+                <div class="modal-section__actions">
+                    <button type="button" class="btn-secondary" id="btn-generate-stats">
+                        <i class="fa-solid fa-dice"></i>
+                        <span>Generate Stats</span>
+                    </button>
+                </div>
             </div>
 
             <div class="modal__footer">

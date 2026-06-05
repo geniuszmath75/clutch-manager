@@ -134,7 +134,6 @@ async function saveProfile(): Promise<void> {
 
         profileNickname.value = res.data.nickname;
         profileEmail.value    = res.data.email;
-        console.log(res.data);
         teamRoleField.setValue(res.data.teamRole ?? null);
 
         setEditMode('profile', false);
