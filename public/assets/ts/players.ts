@@ -16,6 +16,8 @@ interface Player {
     teamRoleIdent: string | null;
     teamId: number | null,
     isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 const userRole          = document.body.dataset['role'] ?? '';

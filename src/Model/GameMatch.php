@@ -17,6 +17,8 @@ final class GameMatch
         public readonly int    $teamId,
         public readonly int    $gameModeId,
         public readonly string $playedAt,
+        public readonly string $createdAt,
+        public readonly string $updatedAt,
     )
     {
     }
@@ -35,7 +37,9 @@ final class GameMatch
             mapId: (int)$row['map_id'],
             teamId: (int)$row['team_id'],
             gameModeId: (int)$row['game_mode_id'],
-            playedAt: (string)$row['played_at']
+            playedAt: (string)$row['played_at'],
+            createdAt: (string)$row['created_at'],
+            updatedAt: (string)$row['updated_at'],
         );
     }
 
@@ -65,7 +69,9 @@ final class GameMatch
             'teamId' => $this->teamId,
             'gameModeId' => $this->gameModeId,
             'playedAt' => $this->playedAt,
-            'result' => $this->result()
+            'result' => $this->result(),
+            'createdAt' => $this->createdAt,
+            'updatedAt' => $this->updatedAt,
         ];
     }
 }

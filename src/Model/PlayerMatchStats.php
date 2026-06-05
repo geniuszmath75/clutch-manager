@@ -15,7 +15,9 @@ final class PlayerMatchStats
         public readonly int    $rkastNumber, // RoundsWithKillAssistSurvivedTraded <= team+opponent score
         public readonly string $playerNickname,
         public readonly int    $matchId,
-        public readonly int    $playerId
+        public readonly int    $playerId,
+        public readonly string $createdAt,
+        public readonly string $updatedAt,
     )
     {
     }
@@ -33,7 +35,9 @@ final class PlayerMatchStats
             rkastNumber: (int)$row['rkast_number'],
             playerNickname: $row['player_nickname'],
             matchId: (int)$row['match_id'],
-            playerId: (int)$row['player_id']
+            playerId: (int)$row['player_id'],
+            createdAt: $row['created_at'],
+            updatedAt: $row['updated_at'],
         );
     }
 
@@ -64,7 +68,9 @@ final class PlayerMatchStats
             'matchId' => $this->matchId,
             'playerId' => $this->playerId,
             'kd' => $this->kd(),
-            'plusMinus' => $this->plusMinus()
+            'plusMinus' => $this->plusMinus(),
+            'createdAt' => $this->createdAt,
+            'updatedAt' => $this->updatedAt,
         ];
     }
 }

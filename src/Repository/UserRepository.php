@@ -32,7 +32,9 @@ final class UserRepository
                    tr.ident AS team_role,
                    u.team_id,
                    u.is_active,
-                   t.name AS team_name
+                   t.name AS team_name,
+                   u.created_at,
+                   u.updated_at
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
@@ -58,7 +60,9 @@ final class UserRepository
                           tr.ident AS team_role,
                           u.team_id,
                           u.is_active,
-                          t.name AS team_name
+                          t.name AS team_name,
+                          u.created_at,
+                          u.updated_at
                    FROM users u
                    JOIN system_roles sr ON sr.id = u.system_role_id
                    LEFT JOIN team_roles tr ON tr.id = u.team_role_id

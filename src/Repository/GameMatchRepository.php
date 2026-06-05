@@ -48,7 +48,9 @@ final class GameMatchRepository
                 gmatch.game_mode_id,
                 gmode.ident  AS game_mode_ident,
                 gmatch.duration,
-                gmatch.played_at
+                gmatch.played_at,
+                gmatch.created_at,
+                gmatch.updated_at
             FROM game_matches gmatch
             JOIN game_maps gmap ON gmatch.map_id = gmap.id
             JOIN game_modes gmode ON gmatch.game_mode_id = gmode.id
@@ -119,7 +121,9 @@ final class GameMatchRepository
                 gmatch.game_mode_id,
                 gmode.ident     AS game_mode_ident,
                 gmatch.duration,
-                gmatch.played_at
+                gmatch.played_at,
+                gmatch.created_at,
+                gmatch.updated_at
             FROM game_matches gmatch
             JOIN game_maps  gmap  ON gmatch.map_id       = gmap.id
             JOIN game_modes gmode ON gmatch.game_mode_id = gmode.id
@@ -153,7 +157,9 @@ final class GameMatchRepository
                 pms.flash_assists_number,
                 pms.total_damage,
                 pms.hs_percent,
-                pms.rkast_number
+                pms.rkast_number,
+                pms.created_at,
+                pms.updated_at
             FROM player_match_stats pms
             JOIN users u ON u.id = pms.player_id
             WHERE pms.match_id = :matchId

@@ -22,6 +22,8 @@ interface GameMatch {
     duration: number;
     playedAt: string;
     result: 'WIN' | 'LOSS' | 'DRAW';
+    createdAt: string;
+    updatedAt: string;
 }
 
 interface PlayerStats {

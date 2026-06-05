@@ -38,7 +38,9 @@ final class PlayerRepository
                 sr.ident AS system_role_ident,
                 tr.ident AS team_role_ident,
                 u.team_id,
-                u.is_active
+                u.is_active,
+                u.created_at,
+                u.updated_at
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
@@ -77,7 +79,9 @@ final class PlayerRepository
                 sr.ident AS system_role_ident,
                 tr.ident AS team_role_ident,
                 u.team_id,
-                u.is_active
+                u.is_active,
+                u.created_at,
+                u.updated_at
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
@@ -142,7 +146,9 @@ final class PlayerRepository
                 sr.ident AS system_role_ident,
                 tr.ident AS team_role_ident,
                 u.team_id,
-                u.is_active
+                u.is_active,
+                u.created_at,
+                u.updated_at
             FROM users u
             JOIN system_roles sr ON sr.id = u.system_role_id
             LEFT JOIN team_roles tr ON tr.id = u.team_role_id
