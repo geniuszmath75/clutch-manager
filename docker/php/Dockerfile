@@ -31,6 +31,14 @@ RUN apk add --no-cache --virtual .run-deps $RUN_DEPS
 
 RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
 
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install PHP dependencies
+WORKDIR /app
+COPY composer.json composer.lock* ./
+RUN composer install --no-interaction --prefer-dist --no-scripts --no-progress
+
 # Copy the application code
 COPY . /app
 

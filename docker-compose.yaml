@@ -33,6 +33,7 @@ services:
       - .env
     volumes:
       - .:/app
+      - php_vendor:/app/vendor
     networks:
       - pg-network
   
@@ -66,3 +67,4 @@ networks:
 volumes:
   pg-data:
   node_modules:
+  php_vendor:

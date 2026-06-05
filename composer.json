@@ -1,0 +1,33 @@
+{
+  "name": "clutch-manager/app",
+  "description": "CS2 e-sports team manager",
+  "type": "project",
+  "require": {
+    "php": ">=8.3"
+  },
+  "require-dev": {
+    "dg/bypass-finals": "^1.8",
+    "phpunit/phpunit": "^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Core\\": "core/",
+      "Src\\": "src/"
+    },
+    "files": [
+      "autoload.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
