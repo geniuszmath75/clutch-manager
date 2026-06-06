@@ -11,9 +11,9 @@ CREATE TABLE users (
                        team_role_id   BIGINT REFERENCES team_roles (id),
                        team_id        BIGINT REFERENCES teams (id),
                        is_active      BOOLEAN      NOT NULL DEFAULT TRUE,
-                       created_at     TIMESTAMP  NOT NULL DEFAULT NOW(),
-                       updated_at     TIMESTAMP  NOT NULL DEFAULT NOW(),
-                       deleted_at     TIMESTAMP
+                       created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                       updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                       deleted_at     TIMESTAMPTZ
 );
 
 -- -----------------------------------------------------------------------------

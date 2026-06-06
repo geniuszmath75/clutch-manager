@@ -13,9 +13,9 @@ CREATE TABLE player_match_stats
     rkast_number         INT           NOT NULL DEFAULT 0 CHECK ( rkast_number >= 0 ),
     player_id            BIGINT        NOT NULL REFERENCES users (id),
     match_id             BIGINT        NOT NULL REFERENCES game_matches (id) ON DELETE CASCADE,
-    created_at           TIMESTAMP     NOT NULL DEFAULT NOW(),
-    updated_at           TIMESTAMP     NOT NULL DEFAULT NOW(),
-    deleted_at           TIMESTAMP,
+    created_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    deleted_at           TIMESTAMPTZ,
 
     UNIQUE (match_id, player_id)
 );

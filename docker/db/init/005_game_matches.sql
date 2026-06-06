@@ -11,10 +11,10 @@ CREATE TABLE game_matches
     team_id        BIGINT       NOT NULL REFERENCES teams (id),
     map_id         BIGINT       NOT NULL REFERENCES game_maps (id),
     game_mode_id   BIGINT       NOT NULL REFERENCES game_modes (id),
-    played_at      TIMESTAMP    NOT NULL,
-    created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
-    updated_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
-    deleted_at     TIMESTAMP
+    played_at      TIMESTAMPTZ    NOT NULL,
+    created_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    deleted_at     TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_game_matches_team_id ON game_matches(team_id);
