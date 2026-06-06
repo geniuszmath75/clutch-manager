@@ -59,14 +59,6 @@ INSERT INTO strategy_types (ident) VALUES
 
 INSERT INTO users (nickname, email, password, system_role_id, team_role_id, team_id) VALUES
                                                                                               (
-                                                                                                  'admin',
-                                                                                                  'admin@clutch.gg',
-                                                                                                  '$2y$12$40SUI8NjtQpAqc8yZvLrR.n2q4W5Qe5OjTfbtPnR./cXgX83k53GG', -- Admin1234!
-                                                                                                  (SELECT id FROM system_roles WHERE ident = 'ADMIN'),
-                                                                                                  NULL,
-                                                                                                  NULL
-                                                                                              ),
-                                                                                              (
                                                                                                   'coach_dev',
                                                                                                   'coach@clutch.gg',
                                                                                                   '$2y$12$BvjdQMSy6oAfbfZQQz9bae96bDIWYAzUkxceMt0DWUZH2hUNyT1Re', -- Coach1234!

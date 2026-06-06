@@ -43,3 +43,8 @@ RUN composer install --no-interaction --prefer-dist --no-scripts --no-progress
 COPY . /app
 
 VOLUME ["/app"]
+
+# Admin seeder entrypoint
+COPY docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["docker-entrypoint.sh"]

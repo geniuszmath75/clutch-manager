@@ -24,6 +24,12 @@ services:
       - pg-network
     volumes:
       - ./docker/db/init:/docker-entrypoint-initdb.d
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   
   php:
     build:
@@ -36,6 +42,9 @@ services:
       - php_vendor:/app/vendor
     networks:
       - pg-network
+    depends_on:
+      db:
+        condition: service_healthy
   
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -65,6 +74,6 @@ networks:
   pg-network:
 
 volumes:
-  pg-data:
+  pg_data:
   node_modules:
   php_vendor:
