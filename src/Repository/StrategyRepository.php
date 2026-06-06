@@ -160,17 +160,24 @@ final class StrategyRepository
     /**
      * Check if a strategy with the same name already exists in the team (excluding deleted).
      */
-    public function strategyExistsInTeam(int $teamId, string $strategyName): bool
+    public function strategyExistsInTeam(int $teamId, string $strategyName, ?int $excludeId = null): bool
     {
-        $stmt = $this->pdo->prepare("
+        $sql = "
             SELECT 1
             FROM team_strategies
             WHERE team_id = :team_id
                 AND name = :strategy_name
                 AND deleted_at IS NULL
-        ");
+        ";
 
         $params = ['team_id' => $teamId, 'strategy_name' => $strategyName];
+
+        if ($excludeId !== null) {
+            $sql .= " AND id != :exclude_id";
+            $params['exclude_id'] = $excludeId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();

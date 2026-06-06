@@ -101,10 +101,11 @@ final class StrategyService
 
         $strategyData = $this->validatePartialData($data);
 
-        $teamId = Auth::teamId();
-        $isStrategyExists = $this->strategyRepository->strategyExistsInTeam($teamId, $strategyData['name']);
-        if ($isStrategyExists) {
-            throw new InvalidArgumentException('Strategy with the same name already exists in the team.', 409);
+        if (isset($strategyData['name'])) {
+            $isStrategyExists = $this->strategyRepository->strategyExistsInTeam($strategy->teamId, $strategyData['name'], $id);
+            if ($isStrategyExists) {
+                throw new InvalidArgumentException('Strategy with the same name already exists in the team.', 409);
+            }
         }
 
         return $this->strategyRepository->update($id, $strategyData);

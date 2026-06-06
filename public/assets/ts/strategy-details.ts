@@ -38,11 +38,6 @@ interface DictEntry {
     ident: string;
 }
 
-interface Team {
-    id: number;
-    name: string;
-}
-
 /**
  * State
  */
@@ -63,11 +58,6 @@ let availablePlayers: StrategyPlayer[] = [];
 let editSelectedPlayerIds: number[] = [];
 let editSteps: string[] = [];
 let editSelectedTypeId: number | null = null;
-let editSelectedTeamId: number | null = null;
-let availableTeams: Team[] = [];
-
-// ADMIN: custom-select hidden input for team (injected once)
-let editTeamInput: HTMLInputElement | null = null;
 
 const TYPE_LABELS: Record<string, string> = {
     ATTACK: 'Attack',
@@ -176,21 +166,6 @@ async function loadPlayersForEdit(teamId?: number): Promise<void> {
         showFormError(editError, "Failed to load players list");
     }
 
-
-}
-
-/**
- * API - load teams (ADMIN only)
- */
-async function loadTeams(): Promise<void> {
-    if (availableTeams.length > 0) return;
-
-    try {
-        const res = await apiFetch<Team[]>('/teams');
-        if (res.success && res.data) availableTeams = res.data;
-    } catch {
-        showFormError(editError, "Failed to load team list");
-    }
 
 }
 
@@ -382,67 +357,6 @@ function populateEditTypeSelector(selectedTypeId: number): void {
 }
 
 /**
- * ADMIN — inject team custom-select into edit modal (once) and wire player reload
- */
-function ensureAdminEditTeamSelector(strategy: Strategy): void {
-    if (!editTeamInput) {
-        // First call — build custom-select and insert before player field
-        const playerField = document.getElementById('edit-player-field');
-        if (!playerField) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'form-field';
-        wrapper.id = 'edit-team-field';
-        wrapper.innerHTML = `
-            <label class="form-field__label">Team <span class="required">*</span></label>
-            <div class="custom-select" id="edit-team-select">
-                <input type="hidden" id="edit-team" name="team_id">
-                <button type="button" id="edit-team-trigger" class="custom-select__trigger" aria-expanded="false">
-                    Select team…
-                    <span class="custom-select__arrow">
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </span>
-                </button>
-                <div id="edit-team-dropdown" class="custom-select__dropdown">
-                    ${availableTeams.map(t =>
-            `<button type="button" class="custom-select__option" data-value="${t.id}">${escapeHtml(t.name)}</button>`
-        ).join('')}
-                </div>
-            </div>
-        `;
-
-        playerField.parentElement!.insertBefore(wrapper, playerField);
-        editTeamInput = wrapper.querySelector<HTMLInputElement>('#edit-team')!;
-
-        // Listen for change dispatched by custom-select.ts
-        editTeamInput.addEventListener('change', async () => {
-            const teamId = parseInt(editTeamInput!.value, 10);
-            if (!teamId) {
-                availablePlayers    = [];
-                editSelectedPlayerIds = [];
-                renderEditTags();
-                editSelectedTeamId = null;
-                return;
-            }
-            editSelectedTeamId = teamId;
-            await loadPlayersForEdit(teamId);
-        });
-
-        initCustomSelects(modalEdit);
-    }
-
-    // Update selected value and trigger label to match current strategy's team
-    const currentTeam = availableTeams.find(t => t.id === strategy.teamId);
-    editTeamInput.value = String(strategy.teamId);
-    editSelectedTeamId  = strategy.teamId;
-
-    const trigger = document.getElementById('edit-team-trigger') as HTMLButtonElement | null;
-    if (trigger?.firstChild && currentTeam) {
-        trigger.firstChild.textContent = escapeHtml(currentTeam.name);
-    }
-}
-
-/**
  * MODAL - Edit strategy
  */
 
@@ -462,8 +376,6 @@ async function openEditModal(s: Strategy): Promise<void> {
     populateEditTypeSelector(s.strategyTypeId);
 
     if (isAdmin) {
-        await loadTeams();
-        ensureAdminEditTeamSelector(s);
         await loadPlayersForEdit(s.teamId);
     } else {
         if (availablePlayers.length === 0) await loadPlayersForEdit();
@@ -628,5 +540,4 @@ function showDetailError(msg: string): void {
 /**
  * Init
  */
-// bindDeleteModal();
 await fetchStrategy();
