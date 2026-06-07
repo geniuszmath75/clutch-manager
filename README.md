@@ -77,7 +77,7 @@ The project is implemented without any backend or frontend frameworks, relying s
 
 | Role | Players | Matches | Strategies | Teams | Dashboard |
 |---|---|---|---|---|---|
-| **PLAYER** | Read (own team) | Read | Read + edit players | — | Personal stats |
+| **PLAYER** | Read (own team) | Read | Read + edit | — | Personal stats |
 | **COACH** | Full CRUD (own team) | Full CRUD (own team, ≥5 active players) | Full CRUD (own team) | Create own team | Team stats |
 | **ADMIN** | Full access | Full access | Full access | Read all | All teams + audit log |
 
@@ -194,7 +194,7 @@ The schema satisfies **Third Normal Form (3NF)** and includes:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/clutch-manager.git
+git clone https://github.com/geniuszmath75/clutch-manager.git
 cd clutch-manager
 
 # 2. Copy the environment file
@@ -205,7 +205,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The app will be available at **http://localhost:8080/auth/login** ().
+The app will be available at **http://localhost:8080/auth/login**.
 
 ### Stopping the project
 
@@ -264,16 +264,16 @@ After first boot the database is seeded with three ready-to-use accounts:
 Copy `.env.example` to `.env` and fill in the values before starting.
 
 ```dotenv
-# Database
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
+# DATABASE VARIABLES
 POSTGRES_DB=clutch_manager
 POSTGRES_USER=default
 POSTGRES_PASSWORD=123admin
+POSTGRES_PORT=5432
+POSTGRES_HOST=db
 
-# App
-APP_ENV=development       # development | production
-APP_SECRET=your_secret    # used for session security
+# ADMIN
+ADMIN_EMAIL=admin@clutch.gg
+ADMIN_PASSWORD=Admin1234!
 ```
 ---
 
