@@ -11,13 +11,11 @@ CREATE TABLE team_strategies
     strategy_type_id BIGINT       NOT NULL REFERENCES strategy_types (id),
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    deleted_at       TIMESTAMPTZ,
-
-    UNIQUE (team_id, name)
+    deleted_at       TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_ts_team_id ON team_strategies(team_id);
-CREATE INDEX IF NOT EXISTS idx_ts_name ON team_strategies(name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ts_name ON team_strategies(team_id, name) WHERE deleted_at IS NULL;
 
 -- Tabela pivotowa: gracze przypisani do strategii
 CREATE TABLE IF NOT EXISTS team_strategy_player
