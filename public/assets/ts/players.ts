@@ -388,7 +388,9 @@ if (canManageTeam) {
 
     // Table action delegation — resolves icon clicks by walking up to the btn-icon wrapper
     tbodyEl.addEventListener('click', (e: Event) => {
-        const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+        const target = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+        if (!target) return;
+        const btn = target.closest<HTMLElement>('.btn-icon') ?? target;
 
         if (!btn) return;
         const id = Number(btn.dataset['id']);
@@ -400,17 +402,11 @@ if (canManageTeam) {
             return;
         }
 
-        if (btn.classList.contains('btn-icon--toggle') || btn.classList.contains('fa-toggle-on')) {
-            if (!confirm(`Activate player #${id}?`)) return;
-            setPlayerActivity(id, true)
-                .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
-                .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
-            return;
-        }
-
-        if (btn.classList.contains('btn-icon--toggle') || btn.classList.contains('fa-toggle-off')) {
-            if (!confirm(`Deactivate player #${id}?`)) return;
-            setPlayerActivity(id, false)
+        if (btn.classList.contains('btn-icon--toggle')) {
+            const icon = btn.querySelector('i');
+            const isCurrentlyActive = icon?.classList.contains('fa-toggle-off') ?? false;
+            if (!confirm(isCurrentlyActive ? `Deactivate player #${id}?` : `Activate player #${id}?`)) return;
+            setPlayerActivity(id, !isCurrentlyActive)
                 .then(() => fetchPlayers(currentPage, roleFilterEl.value, statusFilterEl.value))
                 .catch(err => alert(err instanceof Error ? err.message : 'An error occurred'));
             return;
